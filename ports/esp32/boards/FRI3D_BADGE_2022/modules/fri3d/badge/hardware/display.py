@@ -1,5 +1,3 @@
-from st7789 import MADCTL_MV, BGR
-
 from .pinout import hardware_pinout
 
 
