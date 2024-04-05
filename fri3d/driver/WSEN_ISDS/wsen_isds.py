@@ -329,7 +329,7 @@ class Wsen_Isds:
         """
         print("Calibrating gyroscope...")
         for _ in range(self.GYRO_NUM_SAMPLES_CALIBRATION):
-            x, y, z self._read_raw_angular_velocities()
+            x, y, z = self._read_raw_angular_velocities()
             self.offset_x += x
             self.offset_y += y
             self.offset_z += z
