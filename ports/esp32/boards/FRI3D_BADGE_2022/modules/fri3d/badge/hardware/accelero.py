@@ -6,4 +6,4 @@ class HardwareAccelero:
         self.address = 0x18
 
 
-hardware_display = HardwareDisplay()
+hardware_accelero = HardwareAccelero()
