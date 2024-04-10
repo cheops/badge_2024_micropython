@@ -1,5 +1,3 @@
-from st7789 import MADCTL_MV, BGR
-
 from .pinout import hardware_pinout
 
 
@@ -10,7 +8,9 @@ class HardwareDisplay:
         self.height = 240
         self.rotation = 0
         self.inversion = False
-        self.rotations = [(MADCTL_MV | BGR, 296, 240, 0, 0)]
+        
+        # A rotation table is a list of tuples for each rotation containing the (width, height, x_gap, y_gap, swap_xy, mirror_x, and mirror_y) values for each rotation.
+        self.rotations = [(296, 240, 0, 0, True, False, False)]
 
 
 hardware_display = HardwareDisplay()

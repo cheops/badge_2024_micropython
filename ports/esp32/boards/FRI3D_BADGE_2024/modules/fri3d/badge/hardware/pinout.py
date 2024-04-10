@@ -13,15 +13,15 @@ class HardwarePinout:
 
     class PinoutSPI:
         def __init__(self):
-            self.pin_mosi = Pin(6, Pin.OUT)
-            self.pin_miso = Pin(8, Pin.IN)
-            self.pin_sck = Pin(7, Pin.OUT)
+            self.pin_mosi = 6
+            self.pin_miso = 8
+            self.pin_sck = 7
 
     class PinoutDisplay:
         def __init__(self):
-            self.pin_rst = Pin(48, Pin.OUT)
-            self.pin_dc = Pin(4, Pin.OUT)
-            self.pin_cs = Pin(5, Pin.OUT)
+            self.pin_rst = 48
+            self.pin_dc = 4
+            self.pin_cs = 5
 
     def __init__(self):
         self.pinout_leds = self.PinoutLEDS()

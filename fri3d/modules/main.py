@@ -48,18 +48,23 @@ demo(leds)
 sleeptime = 0.5
 
 display.fill(colors.RED)
+display.show()
 time.sleep(sleeptime)
 
 display.fill(colors.GREEN)
+display.show()
 time.sleep(sleeptime)
 
 display.fill(colors.BLUE)
+display.show()
 time.sleep(sleeptime)
 
 display.fill(colors.YELLOW)
+display.show()
 time.sleep(sleeptime)
 
 display.fill(colors.BLACK)
+display.show()
 time.sleep(sleeptime)
 
 
@@ -71,6 +76,7 @@ def center(text):
         display.width() // 2 - length // 2 * font.WIDTH,
         display.height() // 2 - font.HEIGHT // 2,
     )
+    display.show()
 
 
 center("REPL")

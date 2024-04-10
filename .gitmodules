@@ -65,3 +65,6 @@
 [submodule "fri3d/micropython-lis2hh12"]
 	path = fri3d/micropython-lis2hh12
 	url = https://github.com/tuupola/micropython-lis2hh12
+[submodule "fri3d/s3lcd"]
+	path = fri3d/s3lcd
+	url = https://github.com/russhughes/s3lcd.git
