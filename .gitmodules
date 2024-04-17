@@ -68,3 +68,6 @@
 [submodule "fri3d/s3lcd"]
 	path = fri3d/s3lcd
 	url = https://github.com/russhughes/s3lcd.git
+[submodule "fri3d/micropython-esp32-ota"]
+	path = fri3d/micropython-esp32-ota
+	url = https://github.com/cheops/micropython-esp32-ota.git
