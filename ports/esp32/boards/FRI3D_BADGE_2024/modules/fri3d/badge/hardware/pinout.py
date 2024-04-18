@@ -22,12 +22,16 @@ class HardwarePinout:
             self.pin_rst = 48
             self.pin_dc = 4
             self.pin_cs = 5
+    class PinoutBuzzer:
+        def __init__(self):
+            self.pin_buzzer = Pin(46, Pin.OUT)
 
     def __init__(self):
         self.pinout_leds = self.PinoutLEDS()
         self.pinout_i2c = self.PinoutI2C()
         self.pinout_spi = self.PinoutSPI()
         self.pinout_display = self.PinoutDisplay()
+        self.pinout_buzzer = self.PinoutBuzzer()
 
 
 hardware_pinout = HardwarePinout()
