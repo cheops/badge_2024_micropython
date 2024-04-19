@@ -1,8 +1,10 @@
 import time
 
 from fri3d.badge import leds, display, colors
-
+from fri3d import logging
 import fri3d.ui
+
+log = logging.Log(__name__, level=logging.DEBUG)
 
 def demo_pixels(np):
     n = np.n
@@ -68,10 +70,12 @@ def demo_screen():
 def test():
     """run some hardware tests"""
 
-    print("starting hardware test")
+    log.debug("starting hardware test")
 
     demo_pixels(leds)
 
     demo_screen()
     
     fri3d.ui.center_text("HARDWARE TEST DONE")
+
+    log.debug("hardware test done")

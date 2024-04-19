@@ -1,10 +1,15 @@
 from fri3d.badge import colors
 from fri3d.badge import display
-from math import sin, cos, radians
-from time import sleep_ms
+from fri3d import logging
+
 from fonts.bitmap import vga1_16x16 as font16
 
-print("fill display BLACK")
+from math import sin, cos, radians
+from time import sleep_ms
+
+log = logging.Log(__name__, level=logging.DEBUG)
+
+log.debug("fill display BLACK")
 display.fill(colors.BLACK)
 display.show()
 sleep_ms(30)
@@ -24,7 +29,7 @@ h=120
 r=60
 
 while True:
-    print("start loop")
+    log.debug("start loop")
     for steps in range(start_degrees, start_degrees + 360, step_degrees ):
 
         b = round( cos(radians(steps)) * r )
@@ -36,7 +41,7 @@ while True:
         x2 = k + b
         y2 = h + a
 
-        #print(steps, a, b, x, y, x2, y2)
+        #log.debug(steps, a, b, x, y, x2, y2)
 
         #display.pixel(x, y, colors.RED)
         display.fill_circle(x, y, r, colors.WHITE)

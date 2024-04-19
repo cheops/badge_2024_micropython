@@ -5,14 +5,14 @@ from math import sin, cos, radians
 import framebuf
 import gc
 
-log = logging.Log(__name__, level=logging.INFO)
+log = logging.Log(__name__, level=logging.DEBUG)
 
 log.debug("import done")
 
 
 
 def cdj_logo_render():
-    print("starting")
+    log.debug("starting")
 
     # fill the whole display with yellow, so that the left and right part have a color
     display.fill(colors.YELLOW)
@@ -138,7 +138,7 @@ def cdj_logo_render():
     buff = bytearray(_width * _height * 2)
     fbuf = framebuf.FrameBuffer(buff, _width, _height, framebuf.RGB565)
 
-    print("framebuffer created")
+    log.debug("framebuffer created")
 
     fbuf.fill(colors.YELLOW)  # fill with yellow
 
@@ -161,11 +161,11 @@ def cdj_logo_render():
     r_i = int(_r - (_outer_c_w / 2))
     h_s_w = int(_SPRITE_WIDTH / 2)
 
-    print("prep done")
+    log.debug("prep done")
 
     while True:
 
-        print("starting logo loop")
+        log.debug("starting logo loop")
         gc.collect()
 
         for step in range(_start_degrees, _start_degrees + 360, _step_degrees):
@@ -179,7 +179,7 @@ def cdj_logo_render():
             x2 = _k + b
             y2 = _h + a
 
-            # print(step, a, b, x, y, x2, y2)
+            # log.debug(step, a, b, x, y, x2, y2)
 
             # fbuf.pixel(x, y, colors.RED)
             fbuf.ellipse(x, y, r_i, r_i, 0xffff, True)
