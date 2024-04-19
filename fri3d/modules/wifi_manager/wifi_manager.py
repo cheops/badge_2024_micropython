@@ -1,4 +1,5 @@
 import network
+import gc
 
 from fri3d import logging
 
@@ -70,3 +71,5 @@ class WifiManager:
             log.debug("disconnecting from network")
             self._wlan.disconnect()
             self._wlan.active(False)
+
+            gc.collect()
