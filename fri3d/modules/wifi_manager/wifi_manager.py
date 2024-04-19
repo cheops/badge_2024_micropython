@@ -49,7 +49,9 @@ class WifiManager:
         self.do_connect()
         return self
     
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is not None:
+            log.warning(f"{exc_type=} {exc_value=} {exc_tb=}")
         self.do_disconnect()
 
     def do_connect(self):
