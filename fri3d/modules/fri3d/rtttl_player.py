@@ -1,5 +1,6 @@
-from fri3d.badge import buzzer
+import time
 
+from fri3d.badge import buzzer
 from fri3d import logging
 
 log = logging.Log(__name__, level=logging.INFO)

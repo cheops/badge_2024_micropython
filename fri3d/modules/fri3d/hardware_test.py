@@ -1,6 +1,5 @@
 import time
 
-from fonts.bitmap import vga1_16x16 as font
 from fri3d.badge import leds, display, colors
 
 import fri3d.ui

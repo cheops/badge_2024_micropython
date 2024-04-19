@@ -1,4 +1,6 @@
+from fonts.bitmap import vga1_16x16 as font
 from fri3d.badge import display, colors
+
 
 def center_text(text):
     """clear display and show white text centered on black background"""
