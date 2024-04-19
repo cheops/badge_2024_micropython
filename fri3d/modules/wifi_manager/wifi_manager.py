@@ -2,28 +2,20 @@ import network
 import gc
 
 from fri3d import logging
+from fri3d.settings_nvs import read_blob, toml_blob_to_dict
 
 log = logging.Log(__name__, level=logging.DEBUG)
 
-def get_ssid_key_from_secrets():
-    try:
-        from .secrets import ssid
-        from .secrets import key
-        return ssid, key
-    except:
-        return None, None
+def _get_nvs_aps():
+    "read toml settings from nvs"
+    d = toml_blob_to_dict(read_blob('system', 'wifi'))
+    return d['aps']
 
-def get_ssid_key_from_nvs():
-    return None, None
+def _get_default_aps():
+    return [{'ssid': 'fri3d-badge', 'key': 'fri3d2024'}]
 
-def get_ssid_key():
-    ssid, key = get_ssid_key_from_secrets()
-    if ssid is None and key is None:
-        ssid, key = get_ssid_key_from_nvs()
-        if ssid is None and key is None:
-            ssid, key = ('fri3d-badge', 'fri3d2024')
-    return ssid, key
-
+def _get_aps():
+    return _get_nvs_aps() + _get_default_aps()
 
 class WifiManager:
     """Manages the wifi connection
@@ -43,7 +35,8 @@ class WifiManager:
 
     def __init__(self):
         self._wlan = network.WLAN(network.STA_IF)
-        self._ssid, self._key = get_ssid_key()
+        self._wlan.config('reconnects', 0)
+        self._aps = _get_aps()
         self._wrc = 0
 
     def __enter__(self):
@@ -55,15 +48,47 @@ class WifiManager:
             log.warning(f"{exc_type=} {exc_value=} {exc_tb=}")
         self.do_disconnect()
 
+    def _last_known_ap(ssid, key):
+        "put the last known ap in front, so that is tried first next time"
+        for ap, i in enumerate(self._aps):
+            if ap['ssid'] == ssid:
+                self._aps.insert(0, self._aps.pop(i))
+                break
+
+    @property
+    def wlan(self):
+        return self._wlan
+
+    def _connect(self, ssid, key):
+        log.debug(f"connecting to network' {ssid}")
+        self._wlan.connect(ssid, key)
+        while self._wlan.status() == network.STAT_CONNECTING:
+            pass
+
+        if self._wlan.status() == netork.STAT_GOT_IP:
+            log.debug(f'network config: {self._wlan.ifconfig()}')
+            self._wrc += 1   
+            self._last_known_ap(ssid, key)
+        elif self._wlan.status() == network.STAT_WRONG_PASSWORD:
+            log.error(f"wrong password for ssid {ssid}")
+        elif self._wlan.status() == network.STAT_NO_AP_FOUND:
+            log.info(f"ssid {ssid} did not answer")
+        elif self._wlan.status() == network.STAT_CONNECT_FAIL:
+            log.info(f"ssid {ssid} failed to connect")
+        elif self._wlan.status() == network.STAT_IDLE:
+            log.errorfo("network is IDLE, it should be connecting")
+
     def do_connect(self):
+        "tries to connect to all known aps in order: nvs, fri3d-default"
         self._wlan.active(True)
         if not self._wlan.isconnected():
-            log.debug('connecting to network...')
-            self._wlan.connect(self._ssid, self._key)
-            while not self._wlan.isconnected():
-                pass
-        log.debug(f'network config: {self._wlan.ifconfig()}')
-        self._wrc += 1
+            for ap in _get_aps():
+                self._connect(ap['ssid', ap['key']])
+                if self._wlan.isconnected():
+                    break
+            
+            if not self._wlan.isconnected():
+                log.error("failed to connect to known access points")
 
     def do_disconnect(self):
         self._wrc -= 1
