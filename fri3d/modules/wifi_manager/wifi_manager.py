@@ -35,7 +35,6 @@ class WifiManager:
 
     def __init__(self):
         self._wlan = network.WLAN(network.STA_IF)
-        self._wlan.config('reconnects', 0)
         self._aps = _get_aps()
         self._wrc = 0
 
@@ -48,9 +47,9 @@ class WifiManager:
             log.warning(f"{exc_type=} {exc_value=} {exc_tb=}")
         self.do_disconnect()
 
-    def _last_known_ap(ssid, key):
+    def _last_known_ap(self, ssid, key):
         "put the last known ap in front, so that is tried first next time"
-        for ap, i in enumerate(self._aps):
+        for i, ap in enumerate(self._aps):
             if ap['ssid'] == ssid:
                 self._aps.insert(0, self._aps.pop(i))
                 break
@@ -65,7 +64,7 @@ class WifiManager:
         while self._wlan.status() == network.STAT_CONNECTING:
             pass
 
-        if self._wlan.status() == netork.STAT_GOT_IP:
+        if self._wlan.status() == network.STAT_GOT_IP:
             log.debug(f'network config: {self._wlan.ifconfig()}')
             self._wrc += 1   
             self._last_known_ap(ssid, key)
@@ -76,14 +75,16 @@ class WifiManager:
         elif self._wlan.status() == network.STAT_CONNECT_FAIL:
             log.info(f"ssid {ssid} failed to connect")
         elif self._wlan.status() == network.STAT_IDLE:
-            log.errorfo("network is IDLE, it should be connecting")
+            log.error("network is IDLE, it should be connecting")
+        else:
+            log.error("unkown wifi status " + self._wlan.status())
 
     def do_connect(self):
         "tries to connect to all known aps in order: nvs, fri3d-default"
         self._wlan.active(True)
         if not self._wlan.isconnected():
             for ap in _get_aps():
-                self._connect(ap['ssid', ap['key']])
+                self._connect(ap['ssid'], ap['key'])
                 if self._wlan.isconnected():
                     break
             
