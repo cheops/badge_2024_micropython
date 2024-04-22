@@ -1,5 +1,6 @@
 import network
 import gc
+import time
 
 from fri3d import logging
 from fri3d.settings_nvs import read_blob, toml_blob_to_dict
@@ -59,21 +60,32 @@ class WifiManager:
         return self._wlan
 
     def _connect(self, ssid, key):
-        log.debug(f"connecting to network' {ssid}")
+        log.debug(f"connecting to network '{ssid}'")
         self._wlan.connect(ssid, key)
-        while self._wlan.status() == network.STAT_CONNECTING:
+        timeout = 3000
+        while self._wlan.status() == network.STAT_CONNECTING or self._wlan.status() == network.STAT_IDLE:
+            time.sleep_ms(50)
+            timeout -= 50
+            if timeout < 0:
+                log.error("timeout (3sec) failed to connect to '{ssid}'")
+                break
             pass
 
         if self._wlan.status() == network.STAT_GOT_IP:
             log.debug(f'network config: {self._wlan.ifconfig()}')
             self._wrc += 1   
             self._last_known_ap(ssid, key)
-        elif self._wlan.status() == network.STAT_WRONG_PASSWORD:
-            log.error(f"wrong password for ssid {ssid}")
+
         elif self._wlan.status() == network.STAT_NO_AP_FOUND:
-            log.info(f"ssid {ssid} did not answer")
-        elif self._wlan.status() == network.STAT_CONNECT_FAIL:
-            log.info(f"ssid {ssid} failed to connect")
+            log.error(f"ssid '{ssid}' no AP found")
+        elif self._wlan.status() == network.STAT_WRONG_PASSWORD:
+            log.error(f"ssid '{ssid}' wrong password")
+        elif self._wlan.status() == network.STAT_BEACON_TIMEOUT:
+            log.error(f"ssid '{ssid}' beacon timeout")
+        elif self._wlan.status() == network.STAT_ASSOC_FAIL:
+            log.error(f"ssid '{ssid}' association failed")
+        elif self._wlan.status() == network.STAT_HANDSHAKE_TIMEOUT:
+            log.error(f"ssid '{ssid}' handshake timeout")
         elif self._wlan.status() == network.STAT_IDLE:
             log.error("network is IDLE, it should be connecting")
         else:
