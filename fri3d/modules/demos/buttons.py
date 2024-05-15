@@ -1,10 +1,14 @@
-from machine import Pin, Signal, ADC
+from machine import Pin, ADC
 from micropython import const
+import micropython
 import time
 
 from fri3d import logging
 
 log = logging.Log(__name__, level=logging.DEBUG)
+
+JOY_X = const(1)
+JOY_Y = const(3)
 
 BUTTON_A_PIN = const(39)
 BUTTON_B_PIN = const(40)
@@ -13,8 +17,6 @@ BUTTON_Y_PIN = const(41)
 BUTTON_MENU_PIN = const(45)
 BUTTON_START_PIN = const(0)
 
-JOY_X = const(1)
-JOY_Y = const(3)
 
 class JoyStick:
     """one axis of an analog joystick
@@ -61,28 +63,103 @@ class JoyStick:
         return uv_val
 
 
+class DebouncedButton:
+    """
+    Debounced pin handler
+
+    - example usage with callback
+    ```
+        def button_pressed(btn:str):
+            print(f"Button {btn} pressed.")
+        db_y = DebouncedButton(Pin(BUTTON_Y_PIN, Pin.IN, Pin.PULL_UP), button_pressed, "Y")
+    ```
+    when button Y is pressed, the function button_pressed will get the argument "Y"
+
+    - example usage to query the debounced value
+    'db_y.value()' will return 1 when button Y is pressed down
+
+    Parameters:
+    pin (machine.Pin): initialized machine.Pin instance
+    cb (function): callback function that will be called when button is pressed (outside irq)
+    arg: arguments to be supplied to the cb function
+    debounce_ms (int): debounce time in ms, default 200 ms
+    """
+
+    def __init__(self, pin, cb=None, arg=None, debounce_ms=200):
+        self._pin = pin
+        self.cb = cb
+        self.arg = arg
+        self.deb_ms = debounce_ms
+        self._start_ms = time.ticks_ms()
+        self._state = 0               # holds the current button state (1 = pressed)
+        self._deb_passed = True       # temp var to check if debounce time has expired
+        self._value = 1               # temp var to buffer pin.value()
+
+        pin.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=self.debounce_handler)
+    
+    def value(self):
+        "return the debounced button value (1 if pressed, 0 otherwise)"
+        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.debounce
+        if self._state == 1 and self._deb_passed:
+            self._value == self._pin.value()
+            if self._value == 1:
+                self._state = 0
+        return self._state
+
+    def set_callback_arg(cb=None, arg=None):
+        self.cb = cb
+        self.arg = arg
+
+    def debounce_handler(self, pin):
+        """debounce the pin"""
+        self._value = pin.value()
+        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.debounce
+        
+        if self._value == 0:
+            # press
+            if self._state == 0:
+                self._state = 1
+                self._start_ms = time.ticks_ms()
+                if not self.cb is None:
+                    micropython.schedule(self.cb, self.arg)  # Schedule the function func to be executed “very soon”, outside irq
+            else:
+                # double trigger, ignore
+                if self._deb_passed:
+                    # we might have missed the up during debounce
+                    self._start_ms = time.ticks_ms()
+                    if not self.cb is None:
+                        micropython.schedule(self.cb, self.arg)  # Schedule the function func to be executed “very soon”, outside irq
+        else:
+            # release
+            if self._deb_passed:
+                self._state = 0
+
 
 joy_x = JoyStick(JOY_X)
 joy_x.init()
-c = joy_x.calibrate_center()
-print("x calibrate: ", c)
 
 joy_y = JoyStick(JOY_Y)
 joy_y.init()
-c = joy_y.calibrate_center()
-print("y calibrate: ", c)
 
-but_A = Signal(Pin(BUTTON_A_PIN, Pin.IN, Pin.PULL_UP), invert=True)
-but_B = Signal(Pin(BUTTON_B_PIN, Pin.IN, Pin.PULL_UP), invert=True)
-but_X = Signal(Pin(BUTTON_X_PIN, Pin.IN, Pin.PULL_UP), invert=True)
-but_Y = Signal(Pin(BUTTON_Y_PIN, Pin.IN, Pin.PULL_UP), invert=True)
-but_MENU = Signal(Pin(BUTTON_MENU_PIN, Pin.IN, Pin.PULL_UP), invert=True)
-but_START = Signal(Pin(BUTTON_START_PIN, Pin.IN), invert=True)  # has external pullup
+
+
+but_A = DebouncedButton(Pin(BUTTON_A_PIN, Pin.IN, Pin.PULL_UP))
+but_B = DebouncedButton(Pin(BUTTON_B_PIN, Pin.IN, Pin.PULL_UP))
+but_X = DebouncedButton(Pin(BUTTON_X_PIN, Pin.IN, Pin.PULL_UP))
+but_Y = DebouncedButton(Pin(BUTTON_Y_PIN, Pin.IN, Pin.PULL_UP))
+but_MENU = DebouncedButton(Pin(BUTTON_MENU_PIN, Pin.IN, Pin.PULL_UP))
+but_START = DebouncedButton(Pin(BUTTON_START_PIN, Pin.IN))  # has external pullup
 
 
 if __name__ == "__main__":
 
     try:
+        c = joy_x.calibrate_center()
+        print("x calibrate: ", c)
+
+        c = joy_y.calibrate_center()
+        print("y calibrate: ", c)
+
         for _ in range(100):
             j_x = joy_x.read()
             j_y = joy_y.read()
