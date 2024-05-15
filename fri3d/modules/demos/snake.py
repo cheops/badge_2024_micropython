@@ -14,6 +14,12 @@ game_over_song = 'GameOver:d=4,o=6,b=120:16c7,16b,16a,16g,16f,16e,4c'
 eat_sound = 'Eat:d=4,o=5,b=120:8a#'
 
 
+import micropython
+import time
+
+from machine import Pin
+from micropython import const
+
 BUTTON_A_PIN = const(39)
 BUTTON_B_PIN = const(40)
 BUTTON_X_PIN = const(38)
@@ -318,7 +324,7 @@ def outro():
     display.show()
 
 
-def main():
+def loop():
     while True:
         start_game()
         game_over()
@@ -329,8 +335,11 @@ def main():
             if data['menu_click']:
                 return
 
-if __name__ == "__main__":
+def main():
     start = intro()
     if start:
-        main()
+        loop()
     outro()
+
+if __name__ == "__main__":
+    main()
