@@ -95,7 +95,11 @@ class DebouncedButton:
         self._deb_passed = True       # temp var to check if debounce time has expired
         self._value = 1               # temp var to buffer pin.value()
 
-        pin.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=self.debounce_handler)
+        # Create references to bound methods beforehand
+        # http://docs.micropython.org/en/latest/pyboard/library/micropython.html#micropython.schedule
+        self._deb_handler = self.debounce_handler
+
+        pin.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=self._deb_handler)
     
     def value(self):
         "return the debounced button value (1 if pressed, 0 otherwise)"
