@@ -99,7 +99,7 @@ class DebouncedButton:
     
     def value(self):
         "return the debounced button value (1 if pressed, 0 otherwise)"
-        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.debounce
+        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.deb_ms
         if self._state == 1 and self._deb_passed:
             self._value == self._pin.value()
             if self._value == 1:
@@ -113,7 +113,7 @@ class DebouncedButton:
     def debounce_handler(self, pin):
         """debounce the pin"""
         self._value = pin.value()
-        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.debounce
+        self._deb_passed = time.ticks_diff(time.ticks_ms(), self._start_ms) > self.deb_ms
         
         if self._value == 0:
             # press
