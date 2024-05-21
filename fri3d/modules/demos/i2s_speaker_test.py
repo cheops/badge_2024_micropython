@@ -1,5 +1,4 @@
 import machine
-import sdcard
 import os
 import math
 import struct
