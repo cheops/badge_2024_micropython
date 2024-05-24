@@ -95,11 +95,11 @@ class WifiScreen:
         kb.set_textarea(ss_ta.ta)
 
         # save button
-        sv = ButtonLabel(screen, "Save", self._save_cb)
+        sv = ButtonLabel(screen, lv.SYMBOL.OK + " Save", self._save_cb)
         sv.btn.align(lv.ALIGN.RIGHT_MID, -5, -15)
         
         # cancel button
-        cancel = ButtonLabel(screen, "Cancel", self._cancel_cb)
+        cancel = ButtonLabel(screen, lv.SYMBOL.CLOSE + " Cancel", self._cancel_cb)
         cancel.btn.align(lv.ALIGN.LEFT_MID, 5, -15)
 
 

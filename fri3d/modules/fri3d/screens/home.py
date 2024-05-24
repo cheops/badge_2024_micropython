@@ -2,6 +2,7 @@ import lvgl as lv
 from fri3d import logging
 
 import fri3d.screens.wifi_conf
+import fri3d.screens.ota_update
 
 log = logging.Log(__name__, level=logging.DEBUG)
 
@@ -56,12 +57,14 @@ class HomeScreen:
             wifi_screen = fri3d.screens.wifi_conf.WifiScreen()
             wifi_screen.load()
 
-        def click_right():
-            log.debug("clicked right")
+        def click_ota_update():
+            log.debug("clicked ota_update")
+            ota_update_screen = fri3d.screens.ota_update.OtaUpdateScreen()
+            ota_update_screen.load()
 
 
-        btn = ButtonLabel(screen, "wifi config", click_wifi)
+        btn = ButtonLabel(screen, lv.SYMBOL.WIFI + " wifi config", click_wifi)
         btn.btn.align(lv.ALIGN.CENTER, -80, -40)
 
-        btn = ButtonLabel(screen, "click right", click_right)
+        btn = ButtonLabel(screen, lv.SYMBOL.REFRESH + " ota update", click_ota_update)
         btn.btn.align(lv.ALIGN.CENTER, 80, -40)
