@@ -1,6 +1,8 @@
 import lvgl as lv
 from fri3d import logging
 
+import fri3d.screens.home
+
 log = logging.Log(__name__, level=logging.DEBUG)
 
 
@@ -27,7 +29,7 @@ class ButtonLabel:
         self.cb = cb
     
     def _bt_event_cb(self, event):
-        code = event.get_code()
+        # code = event.get_code()
         self.cb()
 
 
@@ -44,11 +46,12 @@ class WifiScreen:
         ssid = self.ss_ta.ta.get_text()
         key = self.key_ta.ta.get_text()
         print(f"{ssid=}, {key=}")
+        # TODO save
     
     def _cancel_cb(self):
-        ssid = self.ss_ta.ta.get_text()
-        key = self.key_ta.ta.get_text()
-        print(f"{ssid=}, {key=}")
+        print("Cancel")
+        home_screen = fri3d.screens.home.HomeScreen()
+        home_screen.load()
 
     def _construct(self):
         screen = self._screen
