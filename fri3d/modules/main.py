@@ -8,6 +8,8 @@ from fri3d.badge import leds, display
 from fri3d.buttons_indev import read_buttons
 from fri3d import logging
 
+from fri3d.screens.wifi_conf import WifiScreen
+
 log = logging.Log(__name__, level=logging.DEBUG)
 
 def demo(np):
@@ -72,43 +74,47 @@ else:
     print("Boot complete, starting application")
     demo(leds)
 
-    screen = lv.screen_active()
-    screen.set_style_bg_color(lv.palette_darken(lv.PALETTE.GREY, 4), lv.PART.MAIN)
+    wifi_screen = WifiScreen()
+    wifi_screen.load()
 
-    label = lv.label(screen)
-    label.set_text("Hello world from MicroPython")
-    label.set_style_text_color(lv.color_hex(0xffffff), lv.PART.MAIN)
-    label.align(lv.ALIGN.CENTER, 0, 0)
 
-    a = lv.anim_t()
-    a.init()
-    a.set_var(label)
-    a.set_values(10, 50)
-    a.set_duration(1000)
-    a.set_playback_delay(100)
-    a.set_playback_duration(300)
-    a.set_repeat_delay(500)
-    a.set_repeat_count(lv.ANIM_REPEAT_INFINITE)
-    a.set_path_cb(lv.anim_t.path_ease_in_out)
-    a.set_custom_exec_cb(lambda _, v: label.set_y(v))
-    a.start()
+    # screen = lv.screen_active()
+    # screen.set_style_bg_color(lv.palette_darken(lv.PALETTE.GREY, 4), lv.PART.MAIN)
+
+    # label = lv.label(screen)
+    # label.set_text("Hello world from MicroPython")
+    # label.set_style_text_color(lv.color_hex(0xffffff), lv.PART.MAIN)
+    # label.align(lv.ALIGN.CENTER, 0, 0)
+
+    # a = lv.anim_t()
+    # a.init()
+    # a.set_var(label)
+    # a.set_values(10, 50)
+    # a.set_duration(1000)
+    # a.set_playback_delay(100)
+    # a.set_playback_duration(300)
+    # a.set_repeat_delay(500)
+    # a.set_repeat_count(lv.ANIM_REPEAT_INFINITE)
+    # a.set_path_cb(lv.anim_t.path_ease_in_out)
+    # a.set_custom_exec_cb(lambda _, v: label.set_y(v))
+    # a.start()
     
-    def click_cb(event):
-        code = event.get_code()
-        if code == lv.EVENT.CLICKED:
-            log.debug("clicked")
+    # def click_cb(event):
+    #     code = event.get_code()
+    #     if code == lv.EVENT.CLICKED:
+    #         log.debug("clicked")
 
-    btn = lv.button(screen)
-    btn.align(lv.ALIGN.CENTER, -80, -40)
-    btn.add_event_cb(click_cb, lv.EVENT.ALL, None)
-    lbl = lv.label(btn)
-    lbl.set_text("click left")
+    # btn = lv.button(screen)
+    # btn.align(lv.ALIGN.CENTER, -80, -40)
+    # btn.add_event_cb(click_cb, lv.EVENT.ALL, None)
+    # lbl = lv.label(btn)
+    # lbl.set_text("click left")
 
-    btn2 = lv.button(screen)
-    btn2.align(lv.ALIGN.CENTER, 80, -40)
-    btn2.add_event_cb(click_cb, lv.EVENT.ALL, None)
-    lbl2 = lv.label(btn2)
-    lbl2.set_text("click right")
+    # btn2 = lv.button(screen)
+    # btn2.align(lv.ALIGN.CENTER, 80, -40)
+    # btn2.add_event_cb(click_cb, lv.EVENT.ALL, None)
+    # lbl2 = lv.label(btn2)
+    # lbl2.set_text("click right")
 
 
     while True:
