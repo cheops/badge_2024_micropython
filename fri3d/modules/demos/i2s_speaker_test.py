@@ -6,10 +6,8 @@ import time
 from machine import Pin
 from machine import I2S
 
-from fri3d.badge.hardware import hardware_spi
-
 # inspiration from https://github.com/miketeachman/micropython-i2s-examples
-# does not (yet) work with 
+# sd_card does not (yet) work with lvgl display
 
 # ======= I2S CONFIGURATION =======
 # available on header fri3d badge 2024
