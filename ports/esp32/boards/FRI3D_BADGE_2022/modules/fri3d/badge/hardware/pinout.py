@@ -8,9 +8,9 @@ class HardwarePinout:
 
     class PinoutSPI:
         def __init__(self):
-            self.pin_mosi = Pin(23, Pin.OUT)
-            self.pin_miso = Pin(19, Pin.IN)
-            self.pin_sck = Pin(18, Pin.OUT)
+            self.pin_mosi = 23
+            self.pin_miso = 19
+            self.pin_sck = 18
 
     class PinoutDisplay:
         def __init__(self):
