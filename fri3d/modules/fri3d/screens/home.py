@@ -40,6 +40,7 @@ class HomeScreen:
         label.align(lv.ALIGN.CENTER, 0, 0)
 
         a = lv.anim_t()
+        self.a = a
         a.init()
         a.set_var(label)
         a.set_values(10, 50)
