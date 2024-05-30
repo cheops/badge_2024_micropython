@@ -3,7 +3,7 @@ import time
 import lvgl_esp32
 import lvgl as lv
 
-from fri3d.badge.hardware import hardware_pinout
+from fri3d.badge.hardware import hardware_sao
 from fri3d.badge import leds, display
 from fri3d.buttons_indev import read_buttons
 from fri3d import logging
@@ -64,7 +64,7 @@ indev_drv.set_group(grp)
 indev_drv.enable(True)
 
 # We check some inputs at boot to see if we need to boot in a special mode
-repl_pin = machine.Pin(hardware_pinout.pinout_sao.gpio2, machine.Pin.IN, machine.Pin.PULL_UP)
+repl_pin = machine.Pin(hardware_sao.pinout.gpio2, machine.Pin.IN, machine.Pin.PULL_UP)
 
 
 if repl_pin.value() == 0:
