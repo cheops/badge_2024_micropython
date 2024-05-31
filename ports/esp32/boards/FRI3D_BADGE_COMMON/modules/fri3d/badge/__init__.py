@@ -3,3 +3,4 @@ from .spi import spi
 from .display import display
 from .buttons import buttons
 from .joystick import joystick
+from .battery_monitor import battery_monitor
