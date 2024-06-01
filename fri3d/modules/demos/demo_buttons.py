@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print("add callback function with multiple args to button press")
     total_count = 0
     def button_callback(args):
-        n, c = *args
+        n, c = args
         print(f"button {n} pressed, total_count: {c}")
 
     buttons['a'].set_callback_arg(button_callback, ('a', total_count))

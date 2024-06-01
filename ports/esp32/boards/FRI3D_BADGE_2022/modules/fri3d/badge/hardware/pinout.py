@@ -22,7 +22,7 @@ class HardwarePinout:
     class PinoutButtons:
         def __init__(self):
             self.pin_buttons = {
-                'boot': Pin(0, Pin.IN)   # has external pullup
+                'boot': Pin(0, Pin.IN)  # has external pullup
             }
 
     class PinoutSAO:
@@ -33,17 +33,18 @@ class HardwarePinout:
     class PinoutGameon:
         def __init__(self):
             self.pin_buttons = {
-                'a': Pin(13, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'start': Pin(32, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-                'b': Pin(12, Pin.IN, Pin.PULL_UP),
-            }            
+                "a": Pin(13, Pin.IN, Pin.PULL_UP),
+                "b": Pin(12, Pin.IN, Pin.PULL_UP),
+                "start": Pin(32, Pin.IN, Pin.PULL_UP),
+                "select": Pin(36, Pin.IN, Pin.PULL_UP),
+                "p0": Pin(27, Pin.IN, Pin.PULL_UP),
+                "p1": Pin(14, Pin.IN, Pin.PULL_UP),
+                "up": Pin(39, Pin.IN, Pin.PULL_UP),
+                "left": Pin(26, Pin.IN, Pin.PULL_UP),
+                "down": Pin(15, Pin.IN, Pin.PULL_UP),
+                "right": Pin(0, Pin.IN),  # has external pullup
+                "p3": Pin(34, Pin.IN, Pin.PULL_UP)
+             }
 
     def __init__(self):
         self.pinout_leds = self.PinoutLEDS()

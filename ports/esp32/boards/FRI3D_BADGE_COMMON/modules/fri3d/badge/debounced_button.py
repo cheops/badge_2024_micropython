@@ -51,7 +51,7 @@ class DebouncedButton:
                 self._state = 0
         return self._state
 
-    def set_callback_arg(cb=None, arg=None):
+    def set_callback_arg(self, cb=None, arg=None):
         self.cb = cb
         self.arg = arg
 
