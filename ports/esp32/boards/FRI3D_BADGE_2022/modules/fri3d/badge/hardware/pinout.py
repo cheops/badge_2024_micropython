@@ -39,7 +39,7 @@ class HardwarePinout:
             self.pin_buttons = {
                 "a": Pin(13, Pin.IN, Pin.PULL_UP),
                 "b": Pin(12, Pin.IN, Pin.PULL_UP),
-                "start": Pin(32, Pin.IN, Pin.PULL_UP),
+                "start": Pin(32, Pin.IN, Pin.PULL_DOWN),  # is active high
                 "select": Pin(36, Pin.IN, Pin.PULL_UP),
                 "p0": Pin(27, Pin.IN, Pin.PULL_UP),
                 "p1": Pin(14, Pin.IN, Pin.PULL_UP),
