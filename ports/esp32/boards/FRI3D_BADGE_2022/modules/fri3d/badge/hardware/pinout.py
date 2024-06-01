@@ -30,6 +30,10 @@ class HardwarePinout:
             self.gpio1 = leds.pin
             self.gpio2 = const(13)
 
+    class PinoutBatteryMonitor:
+        def __init__(self):
+            self.pin_battery_monitor = const(35)
+
     class PinoutGameon:
         def __init__(self):
             self.pin_buttons = {
@@ -52,6 +56,7 @@ class HardwarePinout:
         self.pinout_display = self.PinoutDisplay()
         self.pinout_buttons = self.PinoutButtons()
         self.pinout_sao = self.PinoutSAO(self.pinout_leds)
+        self.pinout_battery_monitor = self.PinoutBatteryMonitor()
         self.pinout_gameon = self.PinoutGameon()
 
 hardware_pinout = HardwarePinout()

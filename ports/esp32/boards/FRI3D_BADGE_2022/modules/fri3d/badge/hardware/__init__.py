@@ -3,4 +3,5 @@ from .spi import hardware_spi
 from .display import hardware_display
 from .buttons import hardware_buttons
 from .sao import hardware_sao
+from .battery_monitor import hardware_battery_monitor
 from .gameon import hardware_gameon
