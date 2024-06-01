@@ -7,15 +7,35 @@ log = logging.Log(__name__, level=logging.DEBUG)
 
 
 class TextArea:
-    def __init__(self, screen, kb):
+    def __init__(self, screen):
+        self._screen = screen
         self.ta = lv.textarea(screen)
-        self.ta.add_event_cb(self._ta_event_cb, lv.EVENT.ALL, None);
-        self._kb = kb
+        self.ta.add_event_cb(self._ta_event_cb, lv.EVENT.ALL, None)
+        self._kb = None
 
     def _ta_event_cb(self, event):
         code = event.get_code()
+
         if code == lv.EVENT.CLICKED or code == lv.EVENT.FOCUSED:
-            self._kb.set_textarea(self.ta)
+            if self._kb is None:
+                # create keyboard
+                self._kb = lv.keyboard(self._screen)
+                self._kb.set_size(self._screen.get_width(), int(self._screen.get_height()/2) )
+                self._kb.align_to(self.ta, lv.ALIGN.OUT_BOTTOM_MID, 0, 0)
+                self._kb.set_x(0)
+                self._kb.add_event_cb(self._kb_event_cb, lv.EVENT.ALL, None)
+                self._kb.set_textarea(self.ta)
+
+        elif code == lv.EVENT.DEFOCUSED:
+            if self._kb is not None:
+                self._kb.delete()
+                self._kb = None
+
+    def _kb_event_cb(self, event):
+        code = event.get_code()
+        if code == lv.EVENT.READY or code == lv.EVENT.CANCEL:
+            self.ta.send_event(lv.EVENT.DEFOCUSED, self.ta)
+
 
 class ButtonLabel:
     def __init__(self, screen, label, cb):
@@ -61,11 +81,8 @@ class WifiScreen:
         title.set_text("Wifi Configuration")
         title.align(lv.ALIGN.TOP_MID, 0, 0)
 
-        # keyboard
-        kb = lv.keyboard(screen)
-        kb.set_size(screen.get_width(), int(screen.get_height()/2) )
-
-        ss_ta = TextArea(screen, kb)
+        # ssid textarea
+        ss_ta = TextArea(screen)
         self.ss_ta = ss_ta
         ss_ta.ta.set_text("")
         ss_ta.ta.set_one_line(True)
@@ -77,8 +94,8 @@ class WifiScreen:
         ss_lbl.set_text("SSID:")
         ss_lbl.align_to(ss_ta.ta, lv.ALIGN.OUT_LEFT_MID, -5, 0)
 
-        # key box
-        key_ta = TextArea(screen, kb)
+        # key textarea
+        key_ta = TextArea(screen)
         self.key_ta = key_ta
         key_ta.ta.set_text("")
         key_ta.ta.set_password_mode(True)
@@ -91,17 +108,10 @@ class WifiScreen:
         key_lbl.set_text("Key:")
         key_lbl.align_to(key_ta.ta, lv.ALIGN.OUT_LEFT_MID, -5, 0)
 
-        # focus the keyboard
-        kb.set_textarea(ss_ta.ta)
-
         # save button
         sv = ButtonLabel(screen, lv.SYMBOL.OK + " Save", self._save_cb)
-        sv.btn.align(lv.ALIGN.RIGHT_MID, -5, -15)
+        sv.btn.align(lv.ALIGN.RIGHT_MID, -5, 0)
         
         # cancel button
         cancel = ButtonLabel(screen, lv.SYMBOL.CLOSE + " Cancel", self._cancel_cb)
-        cancel.btn.align(lv.ALIGN.LEFT_MID, 5, -15)
-
-
-
-
+        cancel.btn.align(lv.ALIGN.LEFT_MID, 5, 0)
