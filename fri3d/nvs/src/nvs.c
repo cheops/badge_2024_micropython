@@ -182,7 +182,7 @@ STATIC mp_obj_t mp_nvs_get(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw
             break;
         case NVS_TYPE_STR:
             size_t str_len;
-            nvs_get_str(self->ns, key, NULL, &str_len);
+            check_esp_err(nvs_get_str(self->ns, key, NULL, &str_len));
             char *str_value = (char *)calloc(1, str_len);
             if (str_value == NULL) {
                 mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("memory allocation failed"));
@@ -193,7 +193,7 @@ STATIC mp_obj_t mp_nvs_get(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw
             break;
         case NVS_TYPE_BLOB:
             size_t blob_len;
-            nvs_get_blob(self->ns, key, NULL, &blob_len);
+            check_esp_err(nvs_get_blob(self->ns, key, NULL, &blob_len));
             uint8_t *data = (uint8_t *)calloc(1, blob_len);
             if (data == NULL) {
                 mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("memory allocation failed"));
