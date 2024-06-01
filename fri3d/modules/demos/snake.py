@@ -1,3 +1,6 @@
+# inspiration from https://github.com/Fri3dCamp/badge2022_gameaddon_snake
+# more inspiration at https://github.com/tinypico/tinypico-micropython/tree/master/play%20shield%20examples/tiny-snake
+
 import random
 random.seed()
 
