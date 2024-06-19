@@ -10,3 +10,4 @@ set(SDKCONFIG_DEFAULTS
 set(MICROPY_FROZEN_MANIFEST ${MICROPY_BOARD_DIR}/manifest.py)
 
 include (${MICROPY_BOARD_DIR}/../FRI3D_BADGE_COMMON/fri3d_lvgl.cmake)
+include (${MICROPY_BOARD_DIR}/../FRI3D_BADGE_COMMON/fri3d_application.cmake)
