@@ -74,6 +74,3 @@
 [submodule "fri3d/lvgl_esp32_mpy"]
 	path = fri3d/lvgl_esp32_mpy
 	url = https://github.com/MathyV/lvgl_esp32_mpy.git
-[submodule "fri3d/micropython-esp32-ota"]
-	path = fri3d/micropython-esp32-ota
-	url = https://github.com/cheops/micropython-esp32-ota.git
