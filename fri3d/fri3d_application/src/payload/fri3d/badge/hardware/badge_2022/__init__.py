@@ -6,3 +6,4 @@ from .onboard_buttons import hardware_onboard_buttons
 from .sao import hardware_sao
 from .spi import hardware_spi
 from .pinout import hardware_pinout
+from .buzzer import hardware_buzzer

@@ -38,6 +38,10 @@ class HardwarePinout:
             self.pin_joystick_x = const(1)
             self.pin_joystick_y = const(3)
 
+    class PinoutBuzzer:
+        def __init__(self):
+            self.pin_buzzer = const(46)
+
     def __init__(self):
         self.pinout_leds = self.PinoutLEDS()
         self.pinout_spi = self.PinoutSPI()
@@ -45,6 +49,7 @@ class HardwarePinout:
         self.pinout_sao = self.PinoutSAO(self.pinout_leds)
         self.pinout_onboard_buttons = self.PinoutOnboardButtons()
         self.pinout_joystick = self.PinoutJoystick()
+        self.pinout_buzzer = self.PinoutBuzzer()
 
 
 hardware_pinout = HardwarePinout()
