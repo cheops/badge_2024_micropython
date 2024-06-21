@@ -23,6 +23,10 @@ class HardwarePinout:
         def __init__(self):
             self.pin_boot = HardwarePinInput(const(0), False)
 
+    class PinoutBuzzer:
+        def __init__(self):
+            self.pin_buzzer = const(32)
+
     class PinoutSAO:
         def __init__(self, leds):
             self.gpio1 = leds.pin
@@ -61,6 +65,7 @@ class HardwarePinout:
         self.pinout_spi = self.PinoutSPI()
         self.pinout_display = self.PinoutDisplay()
         self.pinout_onboard_buttons = self.PinoutOnboardButtons()
+        self.pinout_buzzer = self.PinoutBuzzer()
         self.pinout_sao = self.PinoutSAO(self.pinout_leds)
         self.pinout_gameon = self.PinoutGameOn()
 
