@@ -1,3 +1,4 @@
+import time
 
 class Wsen_Isds:
     _REG_G_X_OUT_L = 0x22
@@ -299,6 +300,8 @@ class Wsen_Isds:
         """
         Reads and returns the acceleration from the 3 axis, all in one read, so the values correspond.
         """
+        # TODO check if data is available
+
         # Get the raw value
         raw_a_x, raw_a_y, raw_a_z = self._read_raw_accelerations()
 
@@ -346,6 +349,8 @@ class Wsen_Isds:
         """
         Reads and returns the angular velocity from the 3 axis, all in one read, so the values correspond.
         """
+        # TODO check if data is available
+
         # Get the raw value
         raw_g_x, raw_g_y, raw_g_z = self._read_raw_angular_velocities()
 
@@ -374,6 +379,8 @@ class Wsen_Isds:
         """
         Reads and returns the angular velocity and accelerations from the 3 axis, all in one read, so the values correspond.
         """
+        # TODO check if data is available
+
         # Get the raw value
         raw_g_x, raw_g_y, raw_g_z, raw_a_x, raw_a_y, raw_a_z = self._read_raw_gyro_acc()
 
