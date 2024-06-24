@@ -12,15 +12,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('directory', help='The directory to package')
 parser.add_argument('outfile', help='The output file')
-
-
-def filter_py(tarinfo: tarfile.TarInfo):
-    print(f"AAA {tarinfo.name}")
-    if os.path.splitext(tarinfo.name)[1] != ".py":
-        return None
-
-    return tarinfo
-
+parser.add_argument('--include_extension', help='add the extension to the include list', action='append', default=['.py'], required=False)
 
 def write_bytes(f, name, data):
     f.write(f"const uint8_t {name}[] = {{\n")
@@ -54,9 +46,11 @@ if __name__ == '__main__':
             dir = os.path.join(root, name)
             tar.add(dir, arcname=os.path.relpath(dir, start=args.directory), recursive=False)
         for name in files:
-            if os.path.splitext(name)[1] == ".py":
+            if os.path.splitext(name)[1] in args.include_extension:
                 file = os.path.join(root, name)
-                tar.add(file, arcname=os.path.relpath(file, start=args.directory))
+                arcname = os.path.relpath(os.path.join(root, name), start=args.directory)
+                print("adding file:", arcname)
+                tar.add(file, arcname=arcname)
 
     tar.close()
 
