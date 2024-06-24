@@ -1,3 +1,4 @@
+from .buzzer import hardware_buzzer
 from .capabilities import hardware_capabilities
 from .display import hardware_display
 from .gameon import hardware_gameon
