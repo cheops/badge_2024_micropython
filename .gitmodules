@@ -9,7 +9,7 @@
 	url = https://github.com/lwip-tcpip/lwip.git
 [submodule "lib/berkeley-db-1.xx"]
 	path = lib/berkeley-db-1.xx
-	url = https://github.com/pfalcon/berkeley-db-1.xx
+	url = https://github.com/micropython/berkeley-db-1.xx
 [submodule "lib/stm32lib"]
 	path = lib/stm32lib
 	url = https://github.com/micropython/stm32lib
@@ -59,9 +59,21 @@
 [submodule "lib/protobuf-c"]
 	path = lib/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "lib/open-amp"]
+	path = lib/open-amp
+	url = https://github.com/OpenAMP/open-amp.git
+[submodule "lib/libmetal"]
+	path = lib/libmetal
+	url = https://github.com/OpenAMP/libmetal.git
+[submodule "lib/arduino-lib"]
+	path = lib/arduino-lib
+	url = https://github.com/arduino/arduino-lib-mpy.git
 [submodule "fri3d/st7789_mpy"]
 	path = fri3d/st7789_mpy
 	url = https://github.com/russhughes/st7789_mpy.git
 [submodule "fri3d/micropython-lis2hh12"]
 	path = fri3d/micropython-lis2hh12
 	url = https://github.com/tuupola/micropython-lis2hh12
+[submodule "fri3d/lvgl_esp32_mpy"]
+	path = fri3d/lvgl_esp32_mpy
+	url = https://github.com/MathyV/lvgl_esp32_mpy.git

@@ -1,0 +1,23 @@
+name: Feature request
+description: Request a feature or improvement
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for requesting features or improvements in our Fri3d firmware.
+  - type: textarea
+    id: feature
+    attributes:
+      label: Description
+      description: |
+        Describe the feature you'd like to see added to our firmware. What does this feature enable and why is it useful?
+    validations:
+      required: true
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Implementation
+      options:
+      - label: I intend to implement this feature and would submit a Pull Request if desirable.
+      - label: I hope the Fri3d maintainers or community will implement this feature.

@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a bug or unexpected behaviour
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide as much detail as you can, it really helps us find and fix bugs faster.
+  - type: dropdown
+    id: badge-hw
+    attributes:
+      label: Which Fri3d Badge are you using?
+      options:
+        - Octopus (2022)
+        - Fox (2024)
+    validations:
+       required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please provide a description of the bug
+      placeholder: |
+        This unexpected behavior occurs:
+
+        > [...]
+    validations:
+      required: true
