@@ -52,7 +52,7 @@ elif badge_type == FRI3D_BADGE_2024:
         def gyro(self):
             return self.wsen_isds.read_angular_velocities()
 
-    wsen_isds = WSEN_ISDS(i2c=i2c, address=hardware_imu.address)
+    wsen_isds = Wsen_Isds(i2c=i2c, address=hardware_imu.address)
     imu = Imu(wsen_isds)
 
 
