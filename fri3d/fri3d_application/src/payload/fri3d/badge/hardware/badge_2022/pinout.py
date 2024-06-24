@@ -7,6 +7,11 @@ class HardwarePinout:
         def __init__(self):
             self.pin = const(2)
 
+    class PinoutI2C:
+        def __init__(self):
+            self.pin_scl = const(22)
+            self.pin_sda = const(21)
+
     class PinoutSPI:
         def __init__(self):
             self.pin_mosi = const(23)
@@ -62,6 +67,7 @@ class HardwarePinout:
 
     def __init__(self):
         self.pinout_leds = self.PinoutLEDS()
+        self.pinout_i2c = self.PinoutI2C()
         self.pinout_spi = self.PinoutSPI()
         self.pinout_display = self.PinoutDisplay()
         self.pinout_onboard_buttons = self.PinoutOnboardButtons()
