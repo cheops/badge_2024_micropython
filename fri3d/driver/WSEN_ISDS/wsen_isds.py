@@ -1,6 +1,8 @@
 import time
 
 class Wsen_Isds:
+    _ISDS_STATUS_REG = 0x1E  # Status data register
+
     _REG_G_X_OUT_L = 0x22
     _REG_G_Y_OUT_L = 0x24
     _REG_G_Z_OUT_L = 0x26
@@ -300,8 +302,6 @@ class Wsen_Isds:
         """
         Reads and returns the acceleration from the 3 axis, all in one read, so the values correspond.
         """
-        # TODO check if data is available
-
         # Get the raw value
         raw_a_x, raw_a_y, raw_a_z = self._read_raw_accelerations()
 
@@ -316,6 +316,9 @@ class Wsen_Isds:
         """
         Reads and returns the raw acceleration from the 3 axis, all in one read, so the values correspond.
         """
+        if not self._acc_data_ready():
+            raise Exception("sensor data not ready")
+
         # Read the accelerometer data starting from x axis lower output register, 6 (3x2) bytes
         raw = self.i2c.readfrom_mem(self.address, Wsen_Isds._REG_G_X_OUT_L, 6)
 
@@ -349,8 +352,6 @@ class Wsen_Isds:
         """
         Reads and returns the angular velocity from the 3 axis, all in one read, so the values correspond.
         """
-        # TODO check if data is available
-
         # Get the raw value
         raw_g_x, raw_g_y, raw_g_z = self._read_raw_angular_velocities()
 
@@ -365,8 +366,11 @@ class Wsen_Isds:
         """
         Reads and returns the raw angular velocity from the 3 axis, all in one read, so the values correspond.
         """
+        if not self._gyro_data_ready():
+            raise Exception("sensor data not ready")
+
         # Read the gyroscope data starting from x axis lower output register, 6 (3x2) bytes
-        raw = self.i2c.readfrom_mem(self.address, REG_G_X_OUT_L, 6)
+        raw = self.i2c.readfrom_mem(self.address, Wsen_Isds.REG_G_X_OUT_L, 6)
 
         raw_g_x = self._convert_from_raw(raw[0], raw[1])
         raw_g_y = self._convert_from_raw(raw[2], raw[3])
@@ -379,8 +383,6 @@ class Wsen_Isds:
         """
         Reads and returns the angular velocity and accelerations from the 3 axis, all in one read, so the values correspond.
         """
-        # TODO check if data is available
-
         # Get the raw value
         raw_g_x, raw_g_y, raw_g_z, raw_a_x, raw_a_y, raw_a_z = self._read_raw_gyro_acc()
 
@@ -399,8 +401,12 @@ class Wsen_Isds:
         """
         Reads and returns the raw angular velocity from the 3 axis, all in one read, so the values correspond.
         """
+        acc_data_ready, gyro_data_ready = self._acc_gyro_data_ready()
+        if not acc_data_ready or not gyro_data_ready:
+            raise Exception("sensor data not ready")
+
         # Read the gyroscope data starting from x axis lower output register, 6 (3x2) bytes
-        raw = self.i2c.readfrom_mem(self.address, REG_G_X_OUT_L, 12)
+        raw = self.i2c.readfrom_mem(self.address, Wsen_Isds.REG_G_X_OUT_L, 12)
 
         raw_g_x = self._convert_from_raw(raw[0], raw[1])
         raw_g_y = self._convert_from_raw(raw[2], raw[3])
@@ -418,3 +424,39 @@ class Wsen_Isds:
         if c & (1 << 15):  # Check if value is negative
             c -= 1 << 16  # Convert to negative value
         return c
+    
+    def _acc_data_ready(self):
+        return self._get_status_reg[0]
+
+    def _gyro_data_ready(self):
+        return self._get_status_reg[1]
+    
+    def _acc_gyro_data_ready(self):
+        status_reg = self._get_status_reg()
+        return status_reg[0], status_reg[1]
+
+    def _get_status_reg(self):
+        """
+        /**
+        * @brief ISDS_STATUS_REG
+        *
+        * Address 0x1E
+        * Type  R
+        * Default value: 0x00
+        */
+        typedef struct
+        {
+            uint8_t accDataReady : 1;               /**< 1: New acceleration data available; 0: No new data available. */
+            uint8_t gyroDataReady : 1;              /**< 1: New gyroscope data available; 0: No new data available. */
+            uint8_t tempDataReady: 1;               /**< 1: New temperature data available; 0: No new data available. */
+            uint8_t notUsed01 : 5;                  /**< These bits must be set to 0 for proper operation of the device. */
+        } ISDS_status_t;        
+        
+        """
+        raw = self.i2c.readfrom_mem(self.address, Wsen_Isds._ISDS_STATUS_REG, 4)
+        
+        acc_data_ready = True if raw[0] == 1 else False
+        gyro_data_ready = True if raw[1] == 1 else False
+        temp_data_ready = True if raw[2] == 1 else False
+
+        return acc_data_ready, gyro_data_ready, temp_data_ready
