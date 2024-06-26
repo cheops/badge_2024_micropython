@@ -1,0 +1,8 @@
+{
+  "name": "Example",
+  "cls": "ExampleApp",
+  "hidden": false,
+  "config": {
+    "answer": "42"
+  }
+}

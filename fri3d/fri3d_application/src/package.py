@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import io
 import os
+import re
 import sys
 import tarfile
 
@@ -12,14 +13,6 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('directory', help='The directory to package')
 parser.add_argument('outfile', help='The output file')
-
-
-def filter_py(tarinfo: tarfile.TarInfo):
-    print(f"AAA {tarinfo.name}")
-    if os.path.splitext(tarinfo.name)[1] != ".py":
-        return None
-
-    return tarinfo
 
 
 def write_bytes(f, name, data):
@@ -49,12 +42,17 @@ if __name__ == '__main__':
         format=tarfile.GNU_FORMAT,
     )
 
+    whitelist = [
+        re.compile('^.*\\.py$'),
+        re.compile('^README\\.md$'),
+        re.compile('^app\\.json$'),
+    ]
     for root, dirs, files in os.walk(args.directory):
         for name in dirs:
             dir = os.path.join(root, name)
             tar.add(dir, arcname=os.path.relpath(dir, start=args.directory), recursive=False)
         for name in files:
-            if os.path.splitext(name)[1] == ".py":
+            if any(regex.match(name) for regex in whitelist):
                 file = os.path.join(root, name)
                 tar.add(file, arcname=os.path.relpath(file, start=args.directory))
 
