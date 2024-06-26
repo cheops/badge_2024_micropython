@@ -14,6 +14,12 @@ def _get_default_aps():
 def _get_aps():
     return _get_user_aps() + _get_default_aps()
 
+class WifiManagerException(Exception):
+    pass
+
+class WifiManagerFailedConnectionException(WifiManagerException):
+    pass
+
 class WifiManager:
     """Manages the wifi connection
     call .do_connect() when you need wifi access
@@ -33,6 +39,7 @@ class WifiManager:
         return cls._self
 
     def __init__(self):
+        network.country('BE')
         self._wlan = network.WLAN(network.STA_IF)
         self._aps = _get_aps()
         self._wrc = 0
@@ -59,35 +66,46 @@ class WifiManager:
 
     def _connect(self, ssid, key):
         logger.debug(f"connecting to network '{ssid}'")
-        self._wlan.connect(ssid, key)
+        try:
+            self._wlan.connect(ssid, key)
+        except Exception as e:
+            logger.debug("Ignoring Exception '%s', let's first wait the timeout, it might recover", e.value)
+            pass
+        
         timeout = 3000
-        while self._wlan.status() == network.STAT_CONNECTING or self._wlan.status() == network.STAT_IDLE:
+        while self._wlan.status() != network.STAT_GOT_IP:
             time.sleep_ms(50)
             timeout -= 50
             if timeout < 0:
-                logger.error("timeout (3sec) failed to connect to '{ssid}'")
+                logger.error("timeout (3 sec) failed to connect to '%s'", ssid)
                 break
             pass
 
         if self._wlan.status() == network.STAT_GOT_IP:
-            logger.debug(f'network config: {self._wlan.ifconfig()}')
+            logger.debug('network config: %s', self._wlan.ifconfig())
             self._wrc += 1   
             self._last_known_ap(ssid, key)
+            return
 
         elif self._wlan.status() == network.STAT_NO_AP_FOUND:
-            logger.error(f"ssid '{ssid}' no AP found")
+            logger.error("ssid: %s: no AP found", ssid)
         elif self._wlan.status() == network.STAT_WRONG_PASSWORD:
-            logger.error(f"ssid '{ssid}' wrong password")
+            logger.error("ssid: %s: wrong password", ssid)
         elif self._wlan.status() == network.STAT_BEACON_TIMEOUT:
-            logger.error(f"ssid '{ssid}' beacon timeout")
+            logger.error("ssid: %s: beacon timeout", ssid)
         elif self._wlan.status() == network.STAT_ASSOC_FAIL:
-            logger.error(f"ssid '{ssid}' association failed")
+            logger.error("ssid: %s: association failed", ssid)
         elif self._wlan.status() == network.STAT_HANDSHAKE_TIMEOUT:
-            logger.error(f"ssid '{ssid}' handshake timeout")
+            logger.error("ssid: %s: handshake timeout", ssid)
         elif self._wlan.status() == network.STAT_IDLE:
-            logger.error("network is IDLE, it should be connecting")
+            logger.error("network is IDLE, it should be connected")
+        elif self._wlan.status() == network.STAT_CONNECTING:
+            logger.error("network is CONNECTING, it should be connected")
         else:
-            logger.error("unkown wifi status " + self._wlan.status())
+            logger.error("unkown wifi status: %d", self._wlan.status())
+        
+        self._wlan.disconnect()
+        time.sleep_ms(50)
 
     def do_connect(self):
         "tries to connect to all known aps in order: nvs, fri3d-default"
@@ -99,7 +117,13 @@ class WifiManager:
                     break
             
             if not self._wlan.isconnected():
-                logger.error("failed to connect to known access points")
+                logger.error("failed to connect to known access points, disabling Wifi")
+                self._wlan.disconnect()
+                self._wlan.active(False)
+                time.sleep_ms(50)
+                raise WifiManagerFailedConnectionException("failed to connect to known access points, disabling Wifi")
+            
+                gc.collect()
 
     def do_disconnect(self):
         self._wrc -= 1
@@ -107,5 +131,7 @@ class WifiManager:
             logger.debug("disconnecting from network")
             self._wlan.disconnect()
             self._wlan.active(False)
+            time.sleep_ms(50)
+            logger.debug("disabled Wifi")
 
             gc.collect()
