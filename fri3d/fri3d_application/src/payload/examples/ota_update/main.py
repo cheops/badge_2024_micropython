@@ -116,13 +116,15 @@ else:
         latest_version, latest_files = fetch_latest_ota_version(user, repo, board_name)
 
         logger.debug(f"{latest_version=}")
-    
-        if semver.compare(latest_version, fri3d_version) > 0:
+
+        c = semver.compare(latest_version, fri3d_version)
+        if c > 0:
             logger.debug(f"we can updgrade from current {fri3d_version} to {latest_version}")
             u = latest_files["micropython.bin"]
             logger.debug(u)
             headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
             ota.update.from_file(url=u['url'], length=u['size'], headers=headers)
-
+        elif c == 0:
+            logger.debug("running latest version: %s", latest_version)
         else:
-            logger.debug(f"current {fri3d_version} is equal or newer than available {latest_version}")
+            logger.debug("current %s is newer than available %s", fri3d_version, latest_version)
