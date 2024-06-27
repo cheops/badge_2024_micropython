@@ -54,7 +54,9 @@ if __name__ == '__main__':
         for name in files:
             if any(regex.match(name) for regex in whitelist):
                 file = os.path.join(root, name)
-                tar.add(file, arcname=os.path.relpath(file, start=args.directory))
+                arcname = os.path.relpath(file, start=args.directory)
+                print(f"adding {arcname}")
+                tar.add(file, arcname=arcname)
 
     tar.close()
 
