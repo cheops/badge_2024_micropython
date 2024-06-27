@@ -38,11 +38,12 @@ class WifiManager:
             cls._self = super().__new__(cls)
         return cls._self
 
-    def __init__(self):
+    def __init__(self, timeout=5):
         network.country('BE')
         self._wlan = network.WLAN(network.STA_IF)
         self._aps = _get_aps()
         self._wrc = 0
+        self._timeout = timeout
 
     def __enter__(self):
         self.do_connect()
@@ -72,12 +73,12 @@ class WifiManager:
             logger.debug("Ignoring Exception '%s', let's first wait the timeout, it might recover", e.value)
             pass
         
-        timeout = 3000
+        timeout = self._timeout * 1000
         while self._wlan.status() != network.STAT_GOT_IP:
             time.sleep_ms(50)
             timeout -= 50
             if timeout < 0:
-                logger.error("timeout (3 sec) failed to connect to '%s'", ssid)
+                logger.error("timeout (%d sec) failed to connect to '%s'", self._timeout, ssid)
                 break
             pass
 
