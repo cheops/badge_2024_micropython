@@ -11,7 +11,7 @@ print("running main.py")
 
 from p0tat0.badge import badge_type, FRI3D_BADGE_2022, FRI3D_BADGE_2024
 
-from fri3d.wifi_manager import WifiManager
+from fri3d.application.wifi_manager import WifiManager
 
 from fri3d.version import version as fri3d_version
 
