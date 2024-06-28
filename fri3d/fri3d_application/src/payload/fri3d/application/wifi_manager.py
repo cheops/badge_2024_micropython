@@ -25,11 +25,19 @@ class WifiManager:
     call .do_connect() when you need wifi access
     call .do_disconnect() when you are done with the wifi access
 
+    # call .ado_connect() when you need wifi access in async code
+    # call .ado_disconnect() when you are done with the wifi access in async code
+
     you can also use WifiManager as a ContextManager, no need to call .do_connect() or .do_disconnect()
     ```
     with WifiManager() as wm:
         <your code here, using wifi>
     ```
+    # you can also use WifiManager as an async ContextManager, no need to call .ado_connect() or .ado_disconnect()
+    # ```
+    # async with WifiManager() as wm:
+    #     <your async code here, using wifi>
+    # ```
     """
     _self = None
 
@@ -38,7 +46,7 @@ class WifiManager:
             cls._self = super().__new__(cls)
         return cls._self
 
-    def __init__(self, timeout=5):
+    def __init__(self, timeout=6):
         network.country('BE')
         self._wlan = network.WLAN(network.STA_IF)
         self._aps = _get_aps()
@@ -53,6 +61,12 @@ class WifiManager:
         if exc_type is not None:
             logger.warning(f"{exc_type=} {exc_value=} {exc_tb=}")
         self.do_disconnect()
+
+    # async def __aenter__(self):
+    #     pass
+
+    # async def __aexit__(self, exc_t, exc_v, exc_tb):
+    #     pass
 
     def _last_known_ap(self, ssid, key):
         "put the last known ap in front, so that is tried first next time"
@@ -122,9 +136,9 @@ class WifiManager:
                 self._wlan.disconnect()
                 self._wlan.active(False)
                 time.sleep_ms(50)
-                raise WifiManagerFailedConnectionException("failed to connect to known access points, disabling Wifi")
-            
                 gc.collect()
+                raise WifiManagerFailedConnectionException("failed to connect to known access points, disabled Wifi")
+            
 
     def do_disconnect(self):
         self._wrc -= 1
@@ -133,6 +147,5 @@ class WifiManager:
             self._wlan.disconnect()
             self._wlan.active(False)
             time.sleep_ms(50)
-            logger.debug("disabled Wifi")
-
             gc.collect()
+            logger.debug("disabled Wifi")
