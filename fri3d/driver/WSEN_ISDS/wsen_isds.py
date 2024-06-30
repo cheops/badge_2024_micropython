@@ -147,7 +147,7 @@ class Wsen_Isds:
             config_value |= (bits << opt["shift_left"])
             self.i2c.writeto_mem(self.address, opt["reg"], bytes([config_value]))
         except KeyError as err:
-            print(f"Invalid option: {option}, or invalid option value:", value)
+            print(f"Invalid option: {option}, or invalid option value: {value}.", err)
 
     def set_acc_range(self, acc_range):
         """
