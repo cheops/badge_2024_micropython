@@ -17,6 +17,7 @@ class Launcher(App):
 
         if self._splash:
             await self.app_manager.run_app(self._splash)
+        await self.app_manager.run_app('fri3d.apps.ota_update')
 
     async def stop(self):
         self.logger.info("Stopping launcher")

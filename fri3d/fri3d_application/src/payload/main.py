@@ -17,10 +17,10 @@ from fri3d.application import Application
 
 
 # If you want you can increase the log output level here
-logging.basicConfig(level=logging.DEBUG, force=True)
+logging.basicConfig(level=logging.WARNING, force=True)
 
 # confirm successful boot
 ota_after_boot.confirm_boot()
 
-app_main = Application(default_app='fri3d.apps.ota_update')
+app_main = Application()
 app_main.run()
