@@ -23,18 +23,25 @@ class WifiManagerFailedConnectionException(WifiManagerException):
 
 class WifiManager:
     """Manages the wifi connection
-    call .do_connect() when you need wifi access
-    call .do_disconnect() when you are done with the wifi access
-
-    call .ado_connect() when you need wifi access in async code
-    call .ado_disconnect() when you are done with the wifi access in async code
+    
+    Keeps a reference counter for the amount of times connected + disconnected.
+    When reaching 0 shut's down the wifi.
+    
+    ## Sync code
+    - call `.do_connect()` when you need wifi access
+    - call `.do_disconnect()` when you are done with the wifi access
 
     you can also use WifiManager as a ContextManager, no need to call .do_connect() or .do_disconnect()
     ```
     with WifiManager():
         <your code here, using wifi>
     ```
-    you can also use WifiManager as an async ContextManager, no need to call .ado_connect() or .ado_disconnect()
+
+    ## Async code
+    - call `await .ado_connect()` when you need wifi access in async code
+    - call `await .ado_disconnect()` when you are done with the wifi access in async code
+
+    you can also use WifiManager as an async ContextManager, no need to call await .ado_connect() or await .ado_disconnect()
     ```
     async with WifiManager():
         <your async code here, using wifi>
