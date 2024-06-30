@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('directory', help='The directory to package')
 parser.add_argument('outfile', help='The output file')
 
+
 def write_bytes(f, name, data):
     f.write(f"const uint8_t {name}[] = {{\n")
 
@@ -53,9 +54,7 @@ if __name__ == '__main__':
         for name in files:
             if any(regex.match(name) for regex in whitelist):
                 file = os.path.join(root, name)
-                arcname = os.path.relpath(os.path.join(root, name), start=args.directory)
-                print("adding file:", arcname)
-                tar.add(file, arcname=arcname)
+                tar.add(file, arcname=os.path.relpath(file, start=args.directory))
 
     tar.close()
 
