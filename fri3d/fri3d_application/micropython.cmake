@@ -22,7 +22,9 @@ add_custom_command(
 )
 
 # Temporarily create an empty file to keep IDF happy
-file(WRITE ${FRI3D_APPLICATION_C} "")
+if (NOT EXISTS ${FRI3D_APPLICATION_C})
+    file(WRITE ${FRI3D_APPLICATION_C} "")
+endif ()
 
 add_library(usermod_fri3d_application INTERFACE)
 

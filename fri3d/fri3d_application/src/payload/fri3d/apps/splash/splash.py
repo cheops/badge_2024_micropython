@@ -1,15 +1,20 @@
 import asyncio
 import lvgl as lv
 
+from fri3d.application import App
 from fri3d.badge.leds import leds
 
-from .log import logger
 
+class Splash(App):
+    def __init__(
+            self,
+            info: AppInfo,
+            managers: Managers,
+    ):
+        super().__init__(info, managers)
 
-class Splash:
-    @staticmethod
-    async def flash_leds():
-        logger.debug("Flashing LEDs")
+    async def flash_leds(self):
+        self.logger.debug("Flashing LEDs")
 
         # cycle
         for i in range(4 * leds.n):
@@ -74,8 +79,8 @@ class Splash:
         lv.anim_delete(label, None)
         label.delete()
 
-    async def run(self):
-        logger.info("Performing splash")
+    async def start(self):
+        self.logger.info("Performing splash")
         flash = asyncio.create_task(self.flash_leds())
         screen = asyncio.create_task(self.splash_screen())
 

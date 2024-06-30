@@ -1,0 +1,8 @@
+{
+  "name": "Launcher",
+  "cls": "Launcher",
+  "hidden": true,
+  "config": {
+    "splash": "fri3d.apps.splash"
+  }
+}

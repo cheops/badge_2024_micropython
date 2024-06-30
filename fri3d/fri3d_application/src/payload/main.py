@@ -12,11 +12,11 @@
 
 import logging
 
-from fri3d.launcher import Launcher
+from fri3d.application import Application
 
 
 # If you want you can increase the log output level here
-logging.basicConfig(level=logging.INFO, force=True)
+logging.basicConfig(level=logging.WARNING, force=True)
 
-app_main = Launcher()
+app_main = Application()
 app_main.run()

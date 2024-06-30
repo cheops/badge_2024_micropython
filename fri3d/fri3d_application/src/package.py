@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import io
 import os
+import re
 import sys
 import tarfile
 
@@ -12,7 +13,6 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('directory', help='The directory to package')
 parser.add_argument('outfile', help='The output file')
-parser.add_argument('--include_extension', help='add the extension to the include list', action='append', default=['.py'], required=False)
 
 def write_bytes(f, name, data):
     f.write(f"const uint8_t {name}[] = {{\n")
@@ -41,12 +41,17 @@ if __name__ == '__main__':
         format=tarfile.GNU_FORMAT,
     )
 
+    whitelist = [
+        re.compile('^.*\\.py$'),
+        re.compile('^README\\.md$'),
+        re.compile('^app\\.json$'),
+    ]
     for root, dirs, files in os.walk(args.directory):
         for name in dirs:
             dir = os.path.join(root, name)
             tar.add(dir, arcname=os.path.relpath(dir, start=args.directory), recursive=False)
         for name in files:
-            if os.path.splitext(name)[1] in args.include_extension:
+            if any(regex.match(name) for regex in whitelist):
                 file = os.path.join(root, name)
                 arcname = os.path.relpath(os.path.join(root, name), start=args.directory)
                 print("adding file:", arcname)
