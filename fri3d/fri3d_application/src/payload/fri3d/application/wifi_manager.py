@@ -84,7 +84,7 @@ class WifiManager:
         return self._wlan
 
     def _connect(self, ssid, key):
-        logger.debug(f"connecting to network '{ssid}'")
+        logger.debug("connecting to network '%s'", ssid)
         try:
             self._wlan.connect(ssid, key)
         except Exception as e:
@@ -101,7 +101,6 @@ class WifiManager:
 
         if self._wlan.status() == network.STAT_GOT_IP:
             logger.debug('network config: %s', self._wlan.ifconfig())
-            self._wrc += 1   
             self._last_known_ap(ssid, key)
             return
 
@@ -133,7 +132,8 @@ class WifiManager:
 
     def do_connect(self):
         "tries to connect to all known aps in order: nvs, fri3d-default"
-        self._wlan.active(True)
+        if not self._wlan.active():
+            self._wlan.active(True)
         if not self._wlan.isconnected():
             for ap in _get_aps():
                 self._connect(ap['ssid'], ap['key'])
@@ -144,6 +144,7 @@ class WifiManager:
                 logger.error("failed to connect to known access points, disabling Wifi")
                 self._disable_wifi()
                 raise WifiManagerFailedConnectionException("failed to connect to known access points, disabled Wifi")
+        self._wrc += 1
 
     def do_disconnect(self):
         self._wrc -= 1
@@ -153,7 +154,7 @@ class WifiManager:
             logger.debug("disabled Wifi")
 
     async def _aconnect(self, ssid, key):
-        logger.debug(f"connecting to network '{ssid}'")
+        logger.debug("connecting to network '%s'", ssid)
         try:
             self._wlan.connect(ssid, key)
         except Exception as e:
@@ -170,7 +171,6 @@ class WifiManager:
 
         if self._wlan.status() == network.STAT_GOT_IP:
             logger.debug('network config: %s', self._wlan.ifconfig())
-            self._wrc += 1   
             self._last_known_ap(ssid, key)
             return
 
@@ -202,10 +202,11 @@ class WifiManager:
 
     async def ado_connect(self):
         "tries to connect to all known aps in order: nvs, fri3d-default"
-        self._wlan.active(True)
+        if not self._wlan.active():
+            self._wlan.active(True)
         if not self._wlan.isconnected():
             for ap in _get_aps():
-                self._aconnect(ap['ssid'], ap['key'])
+                await self._aconnect(ap['ssid'], ap['key'])
                 if self._wlan.isconnected():
                     break
             
@@ -213,6 +214,7 @@ class WifiManager:
                 logger.error("failed to connect to known access points, disabling Wifi")
                 await self._adisable_wifi()
                 raise WifiManagerFailedConnectionException("failed to connect to known access points, disabled Wifi")
+        self._wrc += 1
 
     async def ado_disconnect(self):
         self._wrc -= 1
