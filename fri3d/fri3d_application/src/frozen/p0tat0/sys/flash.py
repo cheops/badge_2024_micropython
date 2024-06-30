@@ -58,7 +58,7 @@ def init_internal_flash():
 
     missing = []
 
-    for item in ['main.py', 'fri3d', 'user', 'examples', 'semver']:
+    for item in ['main.py', 'fri3d', 'user', 'examples', 'semver', 'ota']:
         if item not in entries:
             _logger.info(f"{item} not found, restoring")
             missing.append(item)

@@ -1,13 +1,9 @@
-import logging
-logging.basicConfig(level=logging.DEBUG, force=True)
-
 import requests
 
 import ota.status
 import ota.update
 import semver
 
-print("running main.py")
 
 from p0tat0.badge import badge_type, FRI3D_BADGE_2022, FRI3D_BADGE_2024
 
@@ -60,7 +56,7 @@ def github_json_tree_to_dict(json:str) -> dict:
     return repo_c
 
 
-def fetch_latest_ota_version(user:str, repo:str, board_name:str) -> tuple[str, dict]:
+def fetch_available_ota_versions(user:str, repo:str, board_name:str) -> tuple[str, dict]:
     """return latest version and dict of all files availabe in that version
 
     expected repository layout:
@@ -84,17 +80,20 @@ def fetch_latest_ota_version(user:str, repo:str, board_name:str) -> tuple[str, d
     #logger.debug(repo_c)
     
     board_versions = repo_c["ota"][board_name]
-    
-    logger.debug(f"available versions: {list(board_versions.keys())}")
-    
+
+    available_versions_sorted = sorted(list(board_versions.keys()), key=semver.compare, reverse=True)
+
+    return available_versions_sorted, board_versions
+
+
+def latest_from_versions(board_versions):
     latest_v = next(iter(board_versions))
     for v in board_versions:
         if semver.compare(v, latest_v) > 0:
             latest_v = v
     
     return latest_v, board_versions[latest_v]
-
-
+    
 
 board_name = _get_board_name()
 

@@ -21,8 +21,33 @@ class OtaUpdate(App):
         super().__init__(info, managers)
 
     async def current_version(self):
-        screen = lv.screen_active()
 
+        self.should_stop = False
+        self.btn_check_clicked = False
+        self.bnt_cancel_clicked = False
+        self.btn_update_clicked = False
+
+        self.initial_screen_layout()
+        
+        while True:
+            if self.bnt_cancel_clicked:
+                self.bnt_cancel_clicked = False
+                self.logger.debug("cancel this screen")
+            if self.btn_check_clicked:
+                self.btn_check_clicked = False
+                await self.check_versions()
+            if self.btn_update_clicked:
+                self.btn_update_clicked = False
+                await self.update()
+            if self.should_stop:
+                break
+            
+            await asyncio.sleep(0)
+            
+
+
+    def initial_screen_layout(self):
+        screen = lv.screen_active()
         if self.ota_cabapble():
             self.btn_check = lv.button(screen)
             lbl_check = lv.label(self.btn_check)
@@ -51,19 +76,14 @@ class OtaUpdate(App):
         self.label_version.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
-        
-        self.running = True
-        while self.running:
-            await asyncio.sleep(0.1)
 
-    def btn_check_click(self, event):
-        self.logger.debug("checking for newer version")
-        with WifiManager() as wm:
+    async def check_versions(self):
+        async with WifiManager():
             user = "cheops"
             repo = "fri3d-ota"
             board_name = self._get_board_name()
-        
             self.available_versions_sorted, self.board_versions = self.fetch_available_ota_versions(user, repo, board_name)
+
         self.logger.debug("available versions: %s", self.available_versions_sorted)
 
         self.versions_info()
@@ -91,28 +111,29 @@ class OtaUpdate(App):
         self.btn_update.align(lv.ALIGN.RIGHT_MID, -20, 40)
         self.btn_update.add_event_cb(self.btn_update_click, lv.EVENT.CLICKED, None)        
 
+    def btn_check_click(self, event):
+        self.logger.debug("checking for newer version")
+        self.btn_check_clicked = True
+
     def drop_down_change(self, event):
         index = self.drop_down.get_selected()
         self.selected_version = self.available_versions_sorted[index]
-        # longest = len(max(self.available_versions_sorted, key=len))  # calculate len of longest version string
-        # self.logger.debug
-        # selected_version = " "*longest  # should be large enough to store the option
-        # self.drop_down.get_selected_str(selected_version, len(selected_version))
-        # self.selected_version = selected_version.strip()  # .strip() removes trailing spaces
         self.logger.debug('selected_version: %s', self.selected_version)
 
     def btn_update_click(self, event):
+        self.btn_update_clicked = True
+    
+    async def update(self):
         self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
         u = self.board_versions[self.selected_version]["micropython.bin"]
         self.logger.debug(u)
         
-        with WifiManager() as wm:
+        async with WifiManager():
             headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
             ota.update.from_file(url=u['url'], length=u['size'], headers=headers)
     
     def versions_info(self):
         latest_version = self.available_versions_sorted[0]
-
         c = semver.compare(latest_version, current_version)
         if c > 0:
             self.logger.info("we can updgrade from current %s to %s", current_version, latest_version)
@@ -126,7 +147,7 @@ class OtaUpdate(App):
         self.current_version_task = asyncio.create_task(self.current_version())
 
     async def stop(self):
-        self.running = False
+        self.should_stop = True
         await self.current_version_task
 
         self.label.delete()
