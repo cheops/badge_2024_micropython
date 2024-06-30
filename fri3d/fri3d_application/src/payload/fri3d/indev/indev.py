@@ -3,31 +3,33 @@ import lvgl as lv
 from fri3d.badge.buttons import buttons
 from fri3d.badge.capabilities import capabilities
 from fri3d.badge.joystick import joystick
+from fri3d.badge.communicator import communicator
 
 from .log import logger
 
 
 class Indev:
-    """
-    A             : LV_KEY_ENTER
-    B             : LV_KEY_ESC
-    X | P0        : LV_KEY_NEXT
-    Y | P1        : LV_KEY_PREV
+    COMMUNICATOR_KEYMAP = {
+        communicator.HID_KEY_ENTER: lv.KEY.ENTER,
+        communicator.HID_KEY_ESC: lv.KEY.ESC,
+        communicator.HID_KEY_BACKSPACE: lv.KEY.BACKSPACE,
+        communicator.HID_KEY_DELETE: lv.KEY.DEL,
+        communicator.HID_KEY_RIGHT: lv.KEY.RIGHT,
+        communicator.HID_KEY_LEFT: lv.KEY.LEFT,
+        communicator.HID_KEY_DOWN: lv.KEY.DOWN,
+        communicator.HID_KEY_UP: lv.KEY.UP,
+        communicator.HID_KEY_HOME: lv.KEY.HOME,
+        communicator.HID_KEY_END: lv.KEY.END,
+        communicator.HID_KEY_PAGEUP: lv.KEY.NEXT,
+        communicator.HID_KEY_PAGEDOWN: lv.KEY.PREV,
+        communicator.HID_KEY_TAB: lv.KEY.NEXT,
+    }
 
-    MENU | SELECT : LV_KEY_HOME
-    START         : LV_KEY_END
-
-    JOY_UP        : LV_KEY_UP
-    JOY_DOWN      : LV_KEY_DOWN
-    JOY_LEFT      : LV_KEY_LEFT
-    JOY_RIGHT     : LV_KEY_RIGHT
-    """
     def __init__(self) -> None:
-        
         # remember the last key pressed reported to lvgl
         self.last_key_pressed = None
-        
-        # Create references to bound methods beforehand
+
+            # Create references to bound methods beforehand
         # http://docs.micropython.org/en/latest/pyboard/library/micropython.html#micropython.schedule
         self._read_buttons = self.read_buttons
 
@@ -79,6 +81,11 @@ class Indev:
                 keys_pressed.append(lv.KEY.DOWN)
             if buttons.right and buttons.right.value():
                 keys_pressed.append(lv.KEY.RIGHT)
+
+        if capabilities.communicator:
+            key = communicator.get_first_key()
+            if key and (key in self.COMMUNICATOR_KEYMAP):
+                keys_pressed.append(self.COMMUNICATOR_KEYMAP[key])
 
         if self.last_key_pressed is not None:
             if self.last_key_pressed not in keys_pressed:

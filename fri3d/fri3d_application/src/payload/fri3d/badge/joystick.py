@@ -10,7 +10,7 @@ class Joystick:
         if hardware_capabilities.joystick:
             from fri3d.badge.hardware import hardware_joystick
 
-            self.x =JoystickAxis(hardware_joystick.pinout.pin_joystick_x, dead_val=150)
+            self.x = JoystickAxis(hardware_joystick.pinout.pin_joystick_x, dead_val=150)
             self.x.init()
 
             self.y = JoystickAxis(hardware_joystick.pinout.pin_joystick_y, dead_val=150)
