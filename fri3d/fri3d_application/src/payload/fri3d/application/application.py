@@ -42,6 +42,8 @@ class Application:
 
         await self._app_manager.run_app(self._default_app)
 
+        self.running = False
+
         await tick
 
     def run(self):

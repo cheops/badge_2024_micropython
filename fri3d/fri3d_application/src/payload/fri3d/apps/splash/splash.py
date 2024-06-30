@@ -1,7 +1,7 @@
 import asyncio
 import lvgl as lv
 
-from fri3d.application import App
+from fri3d.application import App, AppInfo, Managers
 from fri3d.badge.leds import leds
 
 
