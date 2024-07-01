@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import lvgl as lv
 import requests
 import ota.status
@@ -23,22 +24,26 @@ class OtaUpdate(App):
     async def current_version(self):
 
         self.should_stop = False
-        self.btn_check_clicked = False
-        self.bnt_cancel_clicked = False
-        self.btn_update_clicked = False
+        self.btn_check_clicked = asyncio.ThreadSafeFlag()
+        self.bnt_cancel_clicked = asyncio.ThreadSafeFlag()
+        self.btn_update_clicked = asyncio.ThreadSafeFlag()
 
         self.initial_screen_layout()
         
         while True:
-            if self.bnt_cancel_clicked:
-                self.bnt_cancel_clicked = False
+            if self.bnt_cancel_clicked.state:
+                self.bnt_cancel_clicked.clear()
                 self.logger.debug("cancel this screen")
-            if self.btn_check_clicked:
-                self.btn_check_clicked = False
+                break
+            
+            if self.btn_check_clicked.state:
+                self.btn_check_clicked.clear()
                 await self.check_versions()
-            if self.btn_update_clicked:
-                self.btn_update_clicked = False
+            
+            if self.btn_update_clicked.state:
+                self.btn_update_clicked.clear()
                 await self.update()
+            
             if self.should_stop:
                 break
             
@@ -65,6 +70,7 @@ class OtaUpdate(App):
         lbl_cancel.set_text("Cancel")
         lbl_cancel.center()
         self.btn_cancel.align(lv.ALIGN.LEFT_MID, 20, 40)
+        self.btn_cancel.add_event_cb(self.btn_cancel_click, lv.EVENT.CLICKED, None)
 
         self.label = lv.label(screen)
         self.label.set_text("Current Version")
@@ -77,17 +83,7 @@ class OtaUpdate(App):
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
 
-    async def check_versions(self):
-        async with WifiManager():
-            user = "cheops"
-            repo = "fri3d-ota"
-            board_name = self._get_board_name()
-            self.available_versions_sorted, self.board_versions = self.fetch_available_ota_versions(user, repo, board_name)
-
-        self.logger.debug("available versions: %s", self.available_versions_sorted)
-
-        self.versions_info()
-
+    def update_screen_layout_available_versions(self):
         screen = lv.screen_active()
 
         self.label_available = lv.label(screen)
@@ -109,11 +105,31 @@ class OtaUpdate(App):
         lbl_update.set_text("Update")
         lbl_update.center()
         self.btn_update.align(lv.ALIGN.RIGHT_MID, -20, 40)
-        self.btn_update.add_event_cb(self.btn_update_click, lv.EVENT.CLICKED, None)        
+        self.btn_update.add_event_cb(self.btn_update_click, lv.EVENT.CLICKED, None)
+
+
+    async def check_versions(self):
+        user = "cheops"
+        repo = "fri3d-ota"
+        board_name = self._get_board_name()
+        
+        try:
+            self.available_versions_sorted, self.board_versions = await self.afetch_available_ota_versions(user, repo, board_name)
+            self.logger.debug("available versions: %s", self.available_versions_sorted)
+
+            self.versions_info()
+            self.update_screen_layout_available_versions()
+        except Exception as err:
+            self.logger.error("Failed getting ota versions %s", repr(err))
+
+
+    def btn_cancel_click(self, event):
+        self.logger.debug("Cancel button clicked")
+        self.bnt_cancel_clicked.set()
 
     def btn_check_click(self, event):
         self.logger.debug("checking for newer version")
-        self.btn_check_clicked = True
+        self.btn_check_clicked.set()
 
     def drop_down_change(self, event):
         index = self.drop_down.get_selected()
@@ -121,16 +137,19 @@ class OtaUpdate(App):
         self.logger.debug('selected_version: %s', self.selected_version)
 
     def btn_update_click(self, event):
-        self.btn_update_clicked = True
+        self.btn_update_clicked.set()
     
     async def update(self):
         self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
         u = self.board_versions[self.selected_version]["micropython.bin"]
         self.logger.debug(u)
         
-        async with WifiManager():
-            headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
-            ota.update.from_file(url=u['url'], length=u['size'], headers=headers)
+        try:
+            async with WifiManager():
+                headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
+                await ota.update.afrom_url(url=u['url'], length=u['size'], headers=headers)
+        except Exception as err:
+            self.logger.error("Failed updating to '%s': %s", self.selected_version, err)
     
     def versions_info(self):
         latest_version = self.available_versions_sorted[0]
@@ -202,7 +221,7 @@ class OtaUpdate(App):
                     }
         return repo_c
 
-    def fetch_available_ota_versions(self, user:str, repo:str, board_name:str) -> tuple[str, dict]:
+    async def afetch_available_ota_versions(self, user:str, repo:str, board_name:str) -> tuple[str, dict]:
         """return a sorted list of available versions and dict of all files for all these versions
 
         expected repository layout:
@@ -218,11 +237,13 @@ class OtaUpdate(App):
         url = f"https://api.github.com/repos/{user}/{repo}/git/trees/main?recursive=1"
         self.logger.debug(url)
         headers = {"User-Agent": "micropython", "Accept": "application/vnd.github+json"}
-        r = requests.get(url, headers=headers)
-        #logger.debug(r.text)
-        res = r.json()
+
+        async with WifiManager():
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.get(url) as r:
+                    json_body = await r.json()
         
-        repo_c = self.github_json_tree_to_dict(res)
+        repo_c = self.github_json_tree_to_dict(json_body)
         #logger.debug(repo_c)
         
         board_versions = repo_c["ota"][board_name]
