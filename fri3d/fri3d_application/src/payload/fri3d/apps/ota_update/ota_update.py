@@ -53,58 +53,92 @@ class OtaUpdate(App):
 
     def initial_screen_layout(self):
         screen = lv.screen_active()
-        if self.ota_cabapble():
-            self.btn_check = lv.button(screen)
-            lbl_check = lv.label(self.btn_check)
-            lbl_check.set_text("Check online")
-            lbl_check.center()
-            self.btn_check.align(lv.ALIGN.RIGHT_MID, -20, 40)
-            self.btn_check.add_event_cb(self.btn_check_click, lv.EVENT.CLICKED, None)
-        else:
-            self.not_supported_lbl = lv.label(screen)
-            self.not_supported_lbl.set_text("Ota not supported")
-            self.not_supported_lbl.align(lv.ALIGN.RIGHT_MID, -20, 0)
-        
-        self.btn_cancel = lv.button(screen)
+
+        # Create a container with ROW flex direction
+        self.cont_row = lv.obj(screen)
+        self.cont_row.set_width(screen.get_width())
+        self.cont_row.set_height(lv.SIZE_CONTENT)
+        self.cont_row.align(lv.ALIGN.BOTTOM_MID, 0, -15)
+        self.cont_row.set_flex_flow(lv.FLEX_FLOW.ROW)
+        self.cont_row.set_style_flex_main_place(lv.FLEX_ALIGN.SPACE_EVENLY, 0)
+        self.cont_row.set_style_pad_hor(5, lv.PART.MAIN)
+        self.cont_row.set_style_pad_ver(5, lv.PART.MAIN)
+        self.cont_row.set_style_bg_opa(lv.OPA.TRANSP, lv.PART.MAIN)
+        self.cont_row.set_style_border_width(0,lv.PART.MAIN)
+
+        self.btn_cancel = lv.button(self.cont_row)
+        self.btn_cancel.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        self.btn_cancel.set_style_pad_ver(5, lv.PART.MAIN)
         lbl_cancel = lv.label(self.btn_cancel)
         lbl_cancel.set_text("Cancel")
         lbl_cancel.center()
-        self.btn_cancel.align(lv.ALIGN.LEFT_MID, 20, 40)
         self.btn_cancel.add_event_cb(self.btn_cancel_click, lv.EVENT.CLICKED, None)
 
-        self.label = lv.label(screen)
-        self.label.set_text("Current Version")
-        self.label.align(lv.ALIGN.TOP_MID, 0, 5)
+        if self.ota_cabapble():
+            self.btn_check = lv.button(self.cont_row)
+            self.btn_check.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+            self.btn_check.set_style_pad_ver(5, lv.PART.MAIN)
+            lbl_check = lv.label(self.btn_check)
+            lbl_check.set_text("Check online")
+            lbl_check.center()
+            self.btn_check.add_event_cb(self.btn_check_click, lv.EVENT.CLICKED, None)
+        else:
+            self.not_supported_lbl = lv.label(self.cont_row)
+            self.not_supported_lbl.set_text("Ota not supported")
+        
+        # Create a container with COLUMN flex direction
+        self.cont_col = lv.obj(screen)
 
-        self.label_version = lv.label(screen)
+        self.cont_col.set_width(screen.get_width())
+        self.cont_col.set_height(lv.SIZE_CONTENT)
+        self.cont_col.align(lv.ALIGN.TOP_MID, 0, 5)
+
+        self.cont_col.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        self.cont_col.set_style_flex_cross_place(lv.FLEX_ALIGN.CENTER, lv.PART.MAIN)
+        self.cont_col.set_style_flex_track_place(lv.FLEX_ALIGN.CENTER, lv.PART.MAIN)
+        self.cont_col.set_style_pad_row(5, lv.PART.MAIN)
+
+        self.cont_col.set_style_pad_hor(0, lv.PART.MAIN)
+        self.cont_col.set_style_pad_ver(5, lv.PART.MAIN)
+        self.cont_col.set_style_bg_opa(lv.OPA.TRANSP, lv.PART.MAIN)
+        self.cont_col.set_style_border_width(0, lv.PART.MAIN)
+
+        self.label = lv.label(self.cont_col)
+        self.label.set_text("Current Version")
+        self.label.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        self.label.center()
+
+        self.label_version = lv.label(self.cont_col)
         self.label_version.set_text(current_version)
-        self.label_version.align_to(self.label, lv.ALIGN.OUT_BOTTOM_MID, 0, 5)
+        self.label_version.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        self.label_version.center()
         self.label_version.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
 
     def update_screen_layout_available_versions(self):
-        screen = lv.screen_active()
 
-        self.label_available = lv.label(screen)
+        self.label_available = lv.label(self.cont_col)
         self.label_available.set_text("Available versions")
-        self.label_available.align_to(self.label_version, lv.ALIGN.OUT_BOTTOM_MID, 0, 5)
+        self.label_available.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        self.label_available.center()
 
-        self.drop_down = lv.dropdown(screen)
+        self.drop_down = lv.dropdown(self.cont_col)
         self.drop_down.set_options("\n".join(self.available_versions_sorted))
         self.drop_down.add_event_cb(self.drop_down_change, lv.EVENT.VALUE_CHANGED, None)
-        self.drop_down.align_to(self.label_available, lv.ALIGN.OUT_BOTTOM_MID, 0, 5)
+        self.drop_down.set_width(lv.pct(90))
 
         self.selected_version = self.available_versions_sorted[0]
         self.logger.debug('selected_version: %s', self.selected_version)
 
         self.btn_check.delete()
 
-        self.btn_update = lv.button(screen)
+        self.btn_update = lv.button(self.cont_row)
+        self.btn_update.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
+        self.btn_update.set_style_pad_ver(5, lv.PART.MAIN)
         lbl_update = lv.label(self.btn_update)
         lbl_update.set_text("Update")
         lbl_update.center()
-        self.btn_update.align(lv.ALIGN.RIGHT_MID, -20, 40)
         self.btn_update.add_event_cb(self.btn_update_click, lv.EVENT.CLICKED, None)
 
 
