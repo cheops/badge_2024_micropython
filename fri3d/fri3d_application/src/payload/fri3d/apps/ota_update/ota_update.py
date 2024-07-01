@@ -1,16 +1,12 @@
 import asyncio
-import aiohttp
 import lvgl as lv
-import requests
 import ota.status
 import ota.update
 import semver
 
 from fri3d.application import App, AppInfo, Managers
 from fri3d.version import version as current_version
-from p0tat0.badge import badge_type, FRI3D_BADGE_2022, FRI3D_BADGE_2024
-from fri3d.application.wifi_manager import WifiManager
-from fri3d.utils.python_ext import cmp_to_key
+from .ota_helper import afetch_available_ota_versions, aupdate_from_url, ota_cabapble
 
 
 class OtaUpdate(App):
@@ -21,28 +17,41 @@ class OtaUpdate(App):
     ):
         super().__init__(info, managers)
 
-    async def current_version(self):
+    async def start(self):
+        self.logger.info("Launching %s", self.name)
+        self.ota_update_main_task = asyncio.create_task(self.ota_update_main())
 
+    async def stop(self):
+        self.should_stop = True
+        await self.ota_update_main_task
+        self.screen_cleanup()
+
+    async def ota_update_main(self):
         self.should_stop = False
         self.btn_check_clicked = asyncio.ThreadSafeFlag()
         self.bnt_cancel_clicked = asyncio.ThreadSafeFlag()
         self.btn_update_clicked = asyncio.ThreadSafeFlag()
-
-        self.initial_screen_layout()
+        self.drop_down_changed = asyncio.ThreadSafeFlag()
+        
+        self.screen_initial_layout()
         
         while True:
             if self.bnt_cancel_clicked.state:
                 self.bnt_cancel_clicked.clear()
-                self.logger.debug("cancel this screen")
+                self.action_cancel()
                 break
             
             if self.btn_check_clicked.state:
                 self.btn_check_clicked.clear()
-                await self.check_versions()
+                await self.action_check_versions()
             
+            if self.drop_down_changed.state:
+                self.drop_down_changed.clear()
+                self.action_drop_down_change()
+
             if self.btn_update_clicked.state:
                 self.btn_update_clicked.clear()
-                await self.update()
+                await self.action_update()
             
             if self.should_stop:
                 break
@@ -50,8 +59,9 @@ class OtaUpdate(App):
             await asyncio.sleep(0)
             
 
-
-    def initial_screen_layout(self):
+    # screen construction functions
+    ###############################
+    def screen_initial_layout(self):
         screen = lv.screen_active()
 
         # Create a container with ROW flex direction
@@ -72,16 +82,16 @@ class OtaUpdate(App):
         lbl_cancel = lv.label(self.btn_cancel)
         lbl_cancel.set_text("Cancel")
         lbl_cancel.center()
-        self.btn_cancel.add_event_cb(self.btn_cancel_click, lv.EVENT.CLICKED, None)
+        self.btn_cancel.add_event_cb(self.callback_btn_cancel_click, lv.EVENT.CLICKED, None)
 
-        if self.ota_cabapble():
+        if ota_cabapble():
             self.btn_check = lv.button(self.cont_row)
             self.btn_check.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
             self.btn_check.set_style_pad_ver(5, lv.PART.MAIN)
             lbl_check = lv.label(self.btn_check)
             lbl_check.set_text("Check online")
             lbl_check.center()
-            self.btn_check.add_event_cb(self.btn_check_click, lv.EVENT.CLICKED, None)
+            self.btn_check.add_event_cb(self.callback_btn_check_click, lv.EVENT.CLICKED, None)
         else:
             self.not_supported_lbl = lv.label(self.cont_row)
             self.not_supported_lbl.set_text("Ota not supported")
@@ -106,30 +116,60 @@ class OtaUpdate(App):
         self.label = lv.label(self.cont_col)
         self.label.set_text("Current Version")
         self.label.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        self.label.center()
+        # self.label.center()
 
         self.label_version = lv.label(self.cont_col)
         self.label_version.set_text(current_version)
         self.label_version.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        self.label_version.center()
+        # self.label_version.center()
         self.label_version.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
+    def screen_spinner_start(self, label_text):
+        screen = lv.screen_active()
 
-    def update_screen_layout_available_versions(self):
+        self.cont_spinner = lv.obj(screen)
+        self.cont_spinner.set_size(screen.get_width(), screen.get_height())
+        self.cont_spinner.center()
+        self.cont_spinner.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
+        size = int(min(screen.get_height()/2, screen.get_width()/2))
+        spinner = lv.spinner(self.cont_spinner)
+        spinner.set_size(size, size)
+        spinner.align(lv.ALIGN.CENTER, 0, -10)
+        # spinner.set_anim_params(100_000, 200)
+
+        self.label5 = lv.label(self.cont_spinner)
+        self.label5.set_text(label_text)
+        self.label5.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+    
+    def screen_spinner_stop(self):
+        self.cont_spinner.delete()
+    
+    def screen_spinner_add_progress_bar(self):
+        screen = lv.screen_active()
+        self.bar = lv.bar(self.cont_spinner)
+        self.bar.set_size(screen.get_width()-20, 20)
+        self.bar.align_to(self.label5, lv.ALIGN.OUT_TOP_MID, 0, -5)
+        self.bar.set_value(0, lv.ANIM.OFF)
+    
+    def screen_spinner_set_progress_bar_value(self, value):
+        self.logger.debug("progress bar value: %d", value)
+        self.bar.set_value(value, lv.ANIM.OFF)
+
+    def screen_update_available_versions(self):
         self.label_available = lv.label(self.cont_col)
         self.label_available.set_text("Available versions")
         self.label_available.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        self.label_available.center()
+        # self.label_available.center()
 
         self.drop_down = lv.dropdown(self.cont_col)
-        self.drop_down.set_options("\n".join(self.available_versions_sorted))
-        self.drop_down.add_event_cb(self.drop_down_change, lv.EVENT.VALUE_CHANGED, None)
         self.drop_down.set_width(lv.pct(90))
+        self.drop_down.set_options("\n".join(self.available_versions_sorted))
+        self.drop_down.add_event_cb(self.callback_drop_down_change, lv.EVENT.VALUE_CHANGED, None)
+        self.drop_down.set_selected(0)
 
         self.selected_version = self.available_versions_sorted[0]
-        self.logger.debug('selected_version: %s', self.selected_version)
 
         self.btn_check.delete()
 
@@ -139,70 +179,47 @@ class OtaUpdate(App):
         lbl_update = lv.label(self.btn_update)
         lbl_update.set_text("Update")
         lbl_update.center()
-        self.btn_update.add_event_cb(self.btn_update_click, lv.EVENT.CLICKED, None)
+        self.btn_update.add_event_cb(self.callback_btn_update_click, lv.EVENT.CLICKED, None)
 
-
-    async def check_versions(self):
-        user = "cheops"
-        repo = "fri3d-ota"
-        board_name = self._get_board_name()
-        
-        try:
-            self.available_versions_sorted, self.board_versions = await self.afetch_available_ota_versions(user, repo, board_name)
-            self.logger.debug("available versions: %s", self.available_versions_sorted)
-
-            self.versions_info()
-            self.update_screen_layout_available_versions()
-        except Exception as err:
-            self.logger.error("Failed getting ota versions %s", repr(err))
-
-
-    def btn_cancel_click(self, event):
-        self.logger.debug("Cancel button clicked")
-        self.bnt_cancel_clicked.set()
-
-    def btn_check_click(self, event):
-        self.logger.debug("checking for newer version")
-        self.btn_check_clicked.set()
-
-    def drop_down_change(self, event):
-        index = self.drop_down.get_selected()
-        self.selected_version = self.available_versions_sorted[index]
-        self.logger.debug('selected_version: %s', self.selected_version)
-
-    def btn_update_click(self, event):
-        self.btn_update_clicked.set()
+    def screen_error_label_show(self, err):
+        if not hasattr(self, 'label_error'):
+            self.label_error = lv.label(self.cont_col)
+            self.label_error.set_height(lv.SIZE_CONTENT)
+            self.label_error.set_width(lv.pct(100))
+            self.label_error.set_long_mode(lv.label.LONG.WRAP)
+            self.label_error.set_style_bg_color(lv.palette_main(lv.PALETTE.RED), lv.PART.MAIN)
+            self.label_error.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
+        self.label_error.set_text(f"{type(err)}: {err.value}")
     
-    async def update(self):
-        self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
-        u = self.board_versions[self.selected_version]["micropython.bin"]
-        self.logger.debug(u)
-        
-        try:
-            async with WifiManager():
-                headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
-                await ota.update.afrom_url(url=u['url'], length=u['size'], headers=headers)
-        except Exception as err:
-            self.logger.error("Failed updating to '%s': %s", self.selected_version, err)
-    
-    def versions_info(self):
-        latest_version = self.available_versions_sorted[0]
-        c = semver.compare(latest_version, current_version)
+    def screen_error_label_remove(self):
+        if hasattr(self, 'label_error'):
+            self.label_error.delete()
+            del self.label_error
+
+    def screen_versions_info(self):
+        if not hasattr(self, 'label_version_info'):
+            self.label_version_info = lv.label(self.cont_col)
+            self.label_version_info.set_height(lv.SIZE_CONTENT)
+            self.label_version_info.set_width(lv.SIZE_CONTENT)
+            self.label_version_info.set_style_bg_color(lv.palette_main(lv.PALETTE.LIGHT_GREEN), lv.PART.MAIN)
+            self.label_version_info.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
+
+        c = semver.compare(self.selected_version, current_version)
         if c > 0:
-            self.logger.info("we can updgrade from current %s to %s", current_version, latest_version)
+            # newer
+            self.label_version_info.set_text("newer-> upgrade")
+            self.logger.info("we can updgrade from current %s to %s", current_version, self.selected_version)
         elif c == 0:
-            self.logger.debug("running latest version: %s", latest_version)
+            # same
+            self.label_version_info.set_text("same-> reinstall")
+            self.logger.debug("running latest version: %s", self.selected_version)
         else:
-            self.logger.debug("current %s is newer than available %s", current_version, latest_version)
+            # older
+            self.label_version_info.set_text("older-> downgrade")
+            self.logger.debug("current %s is newer than available %s", current_version, self.selected_version)
 
-    async def start(self):
-        self.logger.info("Launching %s", self.name)
-        self.current_version_task = asyncio.create_task(self.current_version())
-
-    async def stop(self):
-        self.should_stop = True
-        await self.current_version_task
-
+    def screen_cleanup(self):
+        # TODO: remove objects from screen
         self.label.delete()
         self.label_version.delete()
         self.btn_cancel.delete()
@@ -211,77 +228,68 @@ class OtaUpdate(App):
         else:
             self.not_supported_lbl.delete()
 
-    @staticmethod
-    def ota_cabapble():
-        return ota.status.ready()
 
-    @staticmethod
-    def _get_board_name():
-        if badge_type == FRI3D_BADGE_2022:
-            return 'fri3d_badge_2022'
-        elif badge_type == FRI3D_BADGE_2024:
-            return 'fri3d_badge_2024'
-        else:
-            raise(OSError("Unknown badge type"))
+    # callback functions
+    ####################
+    def callback_btn_cancel_click(self, event):
+        self.bnt_cancel_clicked.set()
 
-    def github_json_tree_to_dict(self, json:str) -> dict:
-        """convert the json tree to a dict with every directory level as key
-        paths are further analyzed
-        blobs get as attributes: url, size
+    def callback_btn_check_click(self, event):
+        self.btn_check_clicked.set()
+
+    def callback_drop_down_change(self, event):
+        self.drop_down_changed.set()
+
+    def callback_btn_update_click(self, event):
+        self.btn_update_clicked.set()
+
+
+    # actions
+    #########
+    def action_cancel(self):
+        self.logger.debug("cancel this screen")
+        self.screen_cleanup()
+        self.app_manager.run_app('')
+
+    async def action_check_versions(self):
+        try:
+            self.screen_spinner_start("Downloading versions ...")
+            self.available_versions_sorted, self.board_versions = await afetch_available_ota_versions()
+            self.screen_spinner_stop()
+            self.logger.debug("available versions: %s", self.available_versions_sorted)
+            self.screen_error_label_remove()
+            self.screen_update_available_versions()
+            self.screen_versions_info()
+
+        except Exception as err:
+            self.logger.error("Failed getting ota versions %s", repr(err))
+            self.screen_spinner_stop()
+            self.screen_error_label_show(err)
+
+    def action_drop_down_change(self):
+        index = self.drop_down.get_selected()
+        self.selected_version = self.available_versions_sorted[index]
+        self.logger.debug('selected_version: %s', self.selected_version)
+        self.screen_versions_info()
+
+    async def action_update(self):
+        self.screen_error_label_remove()
+        self.screen_spinner_start("Updating ...")
+        self.screen_spinner_add_progress_bar()
+
+        self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
+        u = self.board_versions[self.selected_version]["micropython.bin"]
+        self.logger.debug(u)
         
-        example path in the tree: /ota/fri3d_badge_2024/0.0.1/micropython.bin
-        becomes d = {'ota': {'fri3d_badge_2024': {'0.0.1': {'micropython.bin': {'url': 'https://', 'size': 1234}}}}}
-        
-        makes for easy selecting
-        url = d['ota']['fri3d_badge_2024']['0.0.1']['micropython.bin']['url']
-        version = d['ota']['fri3d_badge_2024']
-        """
-        repo_c = {}
-        for file in json["tree"]:
-            # self.logger.debug(file["path"])
-            sp = file["path"].split("/")
-            # self.logger.debug(sp)
-            e = repo_c
-            for i, p in enumerate(sp):
-                if p in e:
-                    e = e[p]
-                elif i < len(sp) - 1:
-                    e[p] = {}
-                    e = e[p]
-                elif i == len(sp) - 1 and file["type"] == "blob":
-                    e[p] = {
-                        "url": file["url"],
-                        "size": file["size"],
-                    }
-        return repo_c
+        try:
+            await aupdate_from_url(u['url'], u['size'], self.screen_spinner_set_progress_bar_value)
+            self.screen_spinner_stop()
+            await asyncio.sleep(0)
+            self.screen_spinner_start("Rebooting ...")
+            await asyncio.sleep(0)
+            await ota.status.aota_reboot(delay=3)
 
-    async def afetch_available_ota_versions(self, user:str, repo:str, board_name:str) -> tuple[str, dict]:
-        """return a sorted list of available versions and dict of all files for all these versions
-
-        expected repository layout:
-            ota/board_name/version/<files>
-
-        needs active internet connection when making this call
-
-        param: user: github username of the ota repository
-            repo: github repository of the ota repository
-            board_name: board name to search for in the repository tree
-        returns: available_versions_sorted, board_versions
-        """
-        url = f"https://api.github.com/repos/{user}/{repo}/git/trees/main?recursive=1"
-        self.logger.debug(url)
-        headers = {"User-Agent": "micropython", "Accept": "application/vnd.github+json"}
-
-        async with WifiManager():
-            async with aiohttp.ClientSession(headers=headers) as session:
-                async with session.get(url) as r:
-                    json_body = await r.json()
-        
-        repo_c = self.github_json_tree_to_dict(json_body)
-        #logger.debug(repo_c)
-        
-        board_versions = repo_c["ota"][board_name]
-
-        available_versions_sorted = sorted(list(board_versions.keys()), key=cmp_to_key(semver.compare), reverse=True)
-
-        return available_versions_sorted, board_versions
+        except Exception as err:
+            self.logger.error("Failed updating to '%s': %s", self.selected_version, err)
+            self.screen_spinner_stop()
+            self.screen_error_label_show(err)
