@@ -6,45 +6,12 @@
 
 import gc
 import io
+import aiohttp
 
 from esp32 import Partition
 
 from .blockdev_writer import BlockDevWriter
 from .status import ota_reboot
-
-
-# Micropython sockets don't have context manager methods. This wrapper provides
-# those.
-class SocketWrapper:
-    def __init__(self, f: io.BufferedReader):
-        self.f = f
-
-    def __enter__(self) -> io.BufferedReader:
-        return self.f
-
-    def __exit__(self, e_t, e_v, e_tr):
-        self.f.close()
-
-
-# Open a file or a URL and return a File-like object for reading
-def open_url(url: str, username=None, password=None, headers={}) -> io.BufferedReader:
-    if url.split(":", 1)[0] not in ("http", "https"):
-        return open(url, "rb")
-    else:
-        import requests
-        
-        if username and password:
-            r = requests.get(url, auth = (username, password), headers=headers)
-        else:
-            r = requests.get(url, headers=headers)
-
-        code: int = r.status_code
-        if code != 200:
-            print(r.text)
-            r.close()
-            raise ValueError(f"HTTP Error: {code}")
-        return SocketWrapper(r.raw)  # type: ignore
-
 
 # OTA manages a MicroPython firmware update over-the-air. It checks that there
 # are at least two "ota" "app" partitions in the partition table and writes new
@@ -101,56 +68,39 @@ class OTA:
     # - f: an io stream (supporting the f.readinto() method)
     # - sha: (optional) the sha256sum of the firmware file
     # - length: (optional) the length (in bytes) of the firmware file
-    def from_stream(self, f: io.BufferedReader, sha: str = "", length: int = 0) -> int:
+    async def afrom_stream(self, f: io.BufferedReader, sha: str = "", length: int = 0) -> int:
         if sha or length:
             self.writer.set_sha_length(sha, length)
         gc.collect()
-        return self.writer.write_from_stream(f)
+        return await self.writer.awrite_from_stream(f)
 
     # Write new firmware to the OTA partition from the given url
     # - url: a filename or a http[s] url for the micropython.bin firmware.
     # - sha: the sha256sum of the firmware file
     # - length: the length (in bytes) of the firmware file
-    def from_firmware_file(self, url: str, sha: str = "", length: int = 0, username=None, password=None, headers={}) -> int:
+    async def afrom_firmware_url(self, url: str, sha: str = "", length: int = 0, headers={}) -> int:
         if self.verbose:
-            print(f"Opening firmware file {url}...")
-        with open_url(url, username, password, headers) as f:
-            return self.from_stream(f, sha, length)
+            print(f"Opening firmware url {url}")
 
-    # Load a firmware file, the location of which is read from a json file
-    # containing the url for the firmware file, the sha and length of the file.
-    # - url: the name of a file or url containing the json.
-    def from_json(self, url: str, headers={}) -> int:
-        if not url.endswith(".json"):
-            raise ValueError("Url does not end with '.json'")
-        if self.verbose:
-            print(f"Opening json file {url}...")
-        with open_url(url, headers=headers) as f:
-            import json
-
-            data: dict = json.load(f)
-        try:
-            firmware: str = data["firmware"]
-            sha: str = data["sha"]
-            length: int = data["length"]
-            if not any(firmware.startswith(s) for s in ("https:", "http:", "/")):
-                # If firmware filename is relative, append to base of url of json file
-                baseurl, *_ = url.rsplit("/", 1)
-                firmware = f"{baseurl}/{firmware}"
-            return self.from_firmware_file(firmware, sha, length, headers=headers)
-        except KeyError as err:
-            print('OTA json must include "firmware", "sha" and "length" keys.')
-            raise err
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url) as r:
+                code: int = r.status
+                content = r.content
+                if code != 200:
+                    r_text = await r.text()
+                    print(r_text)
+                    await r.wait_closed()
+                    raise ValueError(f"HTTP Error: {code}")
+                
+                tot_bytes = await self.afrom_stream(content, sha, length)
+        
+        return tot_bytes
 
 
 # Convenience functions which use the OTA class to perform OTA updates.
-def from_file(
-    url: str, sha="", length=0, verify=True, verbose=True, reboot=True, username=None, password=None, headers={}
+async def afrom_url(
+    url: str, sha="", length=0, verify=True, verbose=True, reboot=True, headers={}
 ) -> None:
     with OTA(verify, verbose, reboot) as ota_update:
-        ota_update.from_firmware_file(url, sha, length, username, password, headers)
+        await ota_update.afrom_firmware_url(url, sha, length, headers)
 
-
-def from_json(url: str, verify=True, verbose=True, reboot=True, username=None, password=None, headers={}):
-    with OTA(verify, verbose, reboot) as ota_update:
-        ota_update.from_json(url, username, password, headers)
