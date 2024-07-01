@@ -126,6 +126,25 @@ class BlockDevWriter:
             tot += self.write(mv[:n])
         return tot
 
+    # Append data from f (a stream object) to the block device
+    async def awrite_from_stream(self, f: io.BufferedReader) -> int:
+        print("starting write")
+        b = bytearray(self.device.blocksize)
+        mv = memoryview(b)
+        tot = 0
+        print("readinto")
+        print(f)
+        n = await f.readinto(mv)
+        print("n", n)
+        if n != 0:
+            print("write")
+            tot += self.write(mv[:n])
+
+        # while (n := await f.readinto(mv)) != 0:
+        #     tot += self.write(mv[:n])
+        print("tot", tot)
+        return tot
+
     # Flush remaining data to the block device and confirm all checksums
     # Raises:
     #   ValueError("SHA mismatch...") if SHA of received data != expected sha
