@@ -15,8 +15,8 @@ The following branches are available in this repository:
 
 The firmware is built on top of and tested with specific upstream versions:
 
-* MicroPython: v1.22.2
-* ESP-IDF: v5.1.2
+* MicroPython: v1.23
+* ESP-IDF: v5.2.2
 
 ## Building
 
