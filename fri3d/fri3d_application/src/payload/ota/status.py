@@ -9,6 +9,7 @@ import binascii
 import struct
 import sys
 import time
+import asyncio
 
 import machine
 from esp32 import Partition
@@ -135,6 +136,13 @@ def ota_reboot(delay=10) -> None:
     print()
     machine.reset()  # Reboot into the new image
 
+# Reboot the device after the provided delay
+async def aota_reboot(delay=10) -> None:
+    for i in range(delay, 0, -1):
+        print(f"\rRebooting in {i:2} seconds (ctrl-C to cancel)", end="")
+        asyncio.sleep(1)
+    print()
+    machine.reset()  # Reboot into the new image
 
 # Micropython does not support forcing an OTA rollback so we do it by hand:
 # - find the previous ota partition, validate the image and set it bootable.

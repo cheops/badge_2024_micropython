@@ -80,6 +80,7 @@ class BlockDevWriter:
         device,  # Block device to recieve the data (eg. esp32.Partition)
         verify: bool = True,  # Should we read back and verify data after writing
         verbose: bool = True,
+        progress_cb = None
     ):
         self.device = Blockdev(device)
         self.writer = io.BufferedWriter(
@@ -88,6 +89,7 @@ class BlockDevWriter:
         self._sha = hashlib.sha256()
         self.verify = verify
         self.verbose = verbose
+        self.progress_cb = progress_cb
         self.sha: str = ""
         self.length: int = 0
         blocksize, blockcount = self.device.blocksize, self.device.blockcount
@@ -104,6 +106,14 @@ class BlockDevWriter:
             blocks, remainder = divmod(length, blocksize)
             print(f"Writing {blocks} blocks + {remainder} bytes.")
 
+    def report_progress_cb(self):
+        blocks, final_remainder = divmod(self.length, self.device.blocksize)
+        block, remainder = divmod(self.device.pos, self.device.blocksize)
+        value = int(block/blocks*100)
+        if remainder:
+            value = 100
+        self.progress_cb(value)
+
     def print_progress(self):
         if self.verbose:
             block, remainder = divmod(self.device.pos, self.device.blocksize)
@@ -115,7 +125,8 @@ class BlockDevWriter:
     def write(self, data: bytearray | bytes | memoryview) -> int:
         self._sha.update(data)
         n = self.writer.write(data)
-        self.print_progress()
+        # self.print_progress()
+        self.report_progress_cb()
         return n
 
     # Append data from f (a stream object) to the block device

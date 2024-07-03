@@ -137,7 +137,7 @@ class OtaUpdate(App):
         spinner = lv.spinner(self.cont_spinner)
         spinner.set_size(size, size)
         spinner.align(lv.ALIGN.CENTER, 0, -10)
-        # spinner.set_anim_params(100_000, 200)
+        spinner.set_anim_params(1_000, 200)
 
         self.label5 = lv.label(self.cont_spinner)
         self.label5.set_text(label_text)
@@ -154,9 +154,10 @@ class OtaUpdate(App):
         self.bar.set_value(0, lv.ANIM.OFF)
     
     def screen_spinner_set_progress_bar_value(self, value):
-        self.logger.debug("progress bar value: %d", value)
-        self.bar.set_value(value, lv.ANIM.OFF)
-
+        if value != self.bar.get_value():
+            self.logger.debug("progress bar value: %d", value)
+            self.bar.set_value(value, lv.ANIM.OFF)
+    
     def screen_update_available_versions(self):
         self.label_available = lv.label(self.cont_col)
         self.label_available.set_text("Available versions")
@@ -274,7 +275,7 @@ class OtaUpdate(App):
 
     async def action_update(self):
         self.screen_error_label_remove()
-        self.screen_spinner_start("Updating ...")
+        self.screen_spinner_start("Updating [screen will freeze]...")
         self.screen_spinner_add_progress_bar()
 
         self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
@@ -283,10 +284,11 @@ class OtaUpdate(App):
         
         try:
             await aupdate_from_url(u['url'], u['size'], self.screen_spinner_set_progress_bar_value)
+            await asyncio.sleep(0.1)
             self.screen_spinner_stop()
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.1)
             self.screen_spinner_start("Rebooting ...")
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.1)
             await ota.status.aota_reboot(delay=3)
 
         except Exception as err:

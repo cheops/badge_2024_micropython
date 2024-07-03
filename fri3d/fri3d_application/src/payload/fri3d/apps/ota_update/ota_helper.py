@@ -97,7 +97,7 @@ async def afetch_available_ota_versions() -> tuple[str, dict]:
 async def aupdate_from_url(url:str, length:int, progress_cb):
     async with WifiManager():
         headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
-        await ota.update.afrom_url(
+        ota.update.from_file(
             url=url, 
             length=length, 
             headers=headers, 
