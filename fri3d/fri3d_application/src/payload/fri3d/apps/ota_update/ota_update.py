@@ -160,6 +160,8 @@ class OtaUpdate(App):
         if value != self.bar.get_value():
             self.logger.debug("progress bar value: %d", value)
             self.bar.set_value(value, lv.ANIM.OFF)
+            # if not running under async, this can be enabled to force a gui draw
+            # lv.timer_handler()
     
     def screen_update_available_versions(self):
         self.label_available = lv.label(self.cont_col)
