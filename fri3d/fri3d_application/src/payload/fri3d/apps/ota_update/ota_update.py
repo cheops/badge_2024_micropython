@@ -64,6 +64,8 @@ class OtaUpdate(App):
     def screen_initial_layout(self):
         screen = lv.screen_active()
 
+        lv.theme_default_get().color_secondary
+
         # Create a container with ROW flex direction
         self.cont_row = lv.obj(screen)
         self.cont_row.set_width(screen.get_width())
@@ -120,7 +122,7 @@ class OtaUpdate(App):
         self.label_version = lv.label(self.cont_col)
         self.label_version.set_text(current_version)
         self.label_version.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        self.label_version.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
+        self.label_version.set_style_bg_color(lv.theme_default_get().color_secondary, lv.PART.MAIN)
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
     def screen_spinner_start(self, label_text):
@@ -186,6 +188,7 @@ class OtaUpdate(App):
         if not hasattr(self, 'label_error'):
             self.label_error = lv.label(self.cont_col)
             self.label_error.set_height(lv.SIZE_CONTENT)
+            self.label_error.set_style_max_height(70, lv.PART.MAIN)
             self.label_error.set_width(lv.pct(100))
             self.label_error.set_long_mode(lv.label.LONG.WRAP)
             self.label_error.set_style_bg_color(lv.palette_main(lv.PALETTE.RED), lv.PART.MAIN)
@@ -202,7 +205,7 @@ class OtaUpdate(App):
             self.label_version_info = lv.label(self.cont_col)
             self.label_version_info.set_height(lv.SIZE_CONTENT)
             self.label_version_info.set_width(lv.SIZE_CONTENT)
-            self.label_version_info.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
+            self.label_version_info.set_style_bg_color(lv.theme_default_get().color_secondary, lv.PART.MAIN)
             self.label_version_info.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
         c = semver.compare(self.selected_version, current_version)

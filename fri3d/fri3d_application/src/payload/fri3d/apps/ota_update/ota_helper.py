@@ -97,10 +97,26 @@ async def afetch_available_ota_versions() -> tuple[str, dict]:
 async def aupdate_from_url(url:str, length:int, progress_cb):
     async with WifiManager():
         headers = {"User-Agent": "micropython", "Accept": "application/vnd.github.raw+json"}
-        ota.update.from_file(
-            url=url, 
-            length=length, 
-            headers=headers, 
-            reboot=False, 
-            progress_cb=progress_cb
-        )
+        
+        # set to True to do async downlad and flash writing and updating the screen at the same time
+        # but this fails, the download size does not match (most of the time underruns, sometimes overruns)
+        async_download = False
+
+        if async_download:
+            await ota.update.afrom_url(
+                url=url, 
+                length=length, 
+                headers=headers, 
+                reboot=False, 
+                progress_cb=progress_cb
+            )
+            
+        else:
+            ota.update.from_file(
+                url=url, 
+                length=length, 
+                headers=headers, 
+                reboot=False, 
+                progress_cb=progress_cb
+            )
+

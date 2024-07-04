@@ -110,6 +110,15 @@ class OTA:
         gc.collect()
         return self.writer.write_from_stream(f)
 
+    # - f: an io stream (supporting the f.readinto() method)
+    # - sha: (optional) the sha256sum of the firmware file
+    # - length: (optional) the length (in bytes) of the firmware file
+    async def afrom_stream(self, f: io.BufferedReader, sha: str = "", length: int = 0) -> int:
+        if sha or length:
+            self.writer.set_sha_length(sha, length)
+        gc.collect()
+        return await self.writer.awrite_from_stream(f)
+
     # Write new firmware to the OTA partition from the given url
     # - url: a filename or a http[s] url for the micropython.bin firmware.
     # - sha: the sha256sum of the firmware file
@@ -145,6 +154,27 @@ class OTA:
             print('OTA json must include "firmware", "sha" and "length" keys.')
             raise err
 
+    # Write new firmware to the OTA partition from the given url
+    # - url: a filename or a http[s] url for the micropython.bin firmware.
+    # - sha: the sha256sum of the firmware file
+    # - length: the length (in bytes) of the firmware file
+    async def afrom_firmware_url(self, url: str, sha: str = "", length: int = 0, headers={}) -> int:
+        if self.verbose:
+            print(f"Opening firmware url {url}")
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url) as r:
+                code: int = r.status
+                content = r.content
+                if code != 200:
+                    r_text = await r.text()
+                    print(r_text)
+                    await r.wait_closed()
+                    raise ValueError(f"HTTP Error: {code}")
+
+                tot_bytes = await self.afrom_stream(content, sha, length)
+
+        return tot_bytes
 
 # Convenience functions which use the OTA class to perform OTA updates.
 def from_file(
@@ -157,3 +187,11 @@ def from_file(
 def from_json(url: str, verify=True, verbose=True, reboot=True, username=None, password=None, headers={}):
     with OTA(verify, verbose, reboot) as ota_update:
         ota_update.from_json(url, username, password, headers)
+
+
+# Convenience functions which use the OTA class to perform OTA updates.
+async def afrom_url(
+    url: str, sha="", length=0, verify=True, verbose=True, reboot=True, headers={}
+) -> None:
+    with OTA(verify, verbose, reboot) as ota_update:
+        await ota_update.afrom_firmware_url(url, sha, length, headers)
