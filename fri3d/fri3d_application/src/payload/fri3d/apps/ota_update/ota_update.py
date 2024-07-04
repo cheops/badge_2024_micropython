@@ -116,12 +116,10 @@ class OtaUpdate(App):
         self.label = lv.label(self.cont_col)
         self.label.set_text("Current Version")
         self.label.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        # self.label.center()
 
         self.label_version = lv.label(self.cont_col)
         self.label_version.set_text(current_version)
         self.label_version.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        # self.label_version.center()
         self.label_version.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
         self.label_version.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
@@ -146,12 +144,15 @@ class OtaUpdate(App):
     def screen_spinner_stop(self):
         self.cont_spinner.delete()
     
-    def screen_spinner_add_progress_bar(self):
+    def screen_spinner_add_progress_bar_message(self, message):
         screen = lv.screen_active()
         self.bar = lv.bar(self.cont_spinner)
         self.bar.set_size(screen.get_width()-20, 20)
         self.bar.align_to(self.label5, lv.ALIGN.OUT_TOP_MID, 0, -5)
         self.bar.set_value(0, lv.ANIM.OFF)
+        label = lv.label(self.cont_spinner)
+        label.align_to(self.bar, lv.ALIGN.OUT_TOP_MID, 0, -5)
+        label.set_text(message)
     
     def screen_spinner_set_progress_bar_value(self, value):
         if value != self.bar.get_value():
@@ -162,7 +163,6 @@ class OtaUpdate(App):
         self.label_available = lv.label(self.cont_col)
         self.label_available.set_text("Available versions")
         self.label_available.set_size(lv.SIZE_CONTENT, lv.SIZE_CONTENT)
-        # self.label_available.center()
 
         self.drop_down = lv.dropdown(self.cont_col)
         self.drop_down.set_width(lv.pct(90))
@@ -202,7 +202,7 @@ class OtaUpdate(App):
             self.label_version_info = lv.label(self.cont_col)
             self.label_version_info.set_height(lv.SIZE_CONTENT)
             self.label_version_info.set_width(lv.SIZE_CONTENT)
-            self.label_version_info.set_style_bg_color(lv.palette_main(lv.PALETTE.LIGHT_GREEN), lv.PART.MAIN)
+            self.label_version_info.set_style_bg_color(lv.palette_main(lv.PALETTE.GREY), lv.PART.MAIN)
             self.label_version_info.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
 
         c = semver.compare(self.selected_version, current_version)
@@ -275,8 +275,8 @@ class OtaUpdate(App):
 
     async def action_update(self):
         self.screen_error_label_remove()
-        self.screen_spinner_start("Updating [screen will freeze]...")
-        self.screen_spinner_add_progress_bar()
+        self.screen_spinner_start("Updating ...")
+        self.screen_spinner_add_progress_bar_message("[screen will freeze]")
 
         self.logger.info("we will updgrade from current %s to %s", current_version, self.selected_version)
         u = self.board_versions[self.selected_version]["micropython.bin"]
