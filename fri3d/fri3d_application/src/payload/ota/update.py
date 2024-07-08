@@ -16,6 +16,9 @@ from .status import ota_reboot
 
 logger = logging.getLogger('ota.update')
 
+ESP_PARTITION_SUBTYPE_APP_OTA_0 = 16
+ESP_PARTITION_SUBTYPE_APP_OTA_1 = 17
+
 # Micropython sockets don't have context manager methods. This wrapper provides
 # those.
 class SocketWrapper:
@@ -62,6 +65,9 @@ class OTA:
         # Get the next free OTA partition
         # Raise OSError(ENOENT) if no OTA partition available
         self.part = Partition(Partition.RUNNING).get_next_update()
+        if self.part.info()[1] > ESP_PARTITION_SUBTYPE_APP_OTA_1:
+            print("Only partition subtypes OTA_0 and OTA_1 are updateable on the Fri3D Camp Badge, yet higher ones might be present for use by additional apps. Wrapping back around to OTA_0.")
+            self.part = Partition.find(Partition.TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0)
         if verbose:
             name: str = self.part.info()[4]
             print(f"Writing new micropython image to OTA partition '{name}'...")
